@@ -5,7 +5,7 @@ import { join, relative } from 'node:path';
 import { encodeAbiParameters, formatUnits, isAddress, keccak256, parseEventLogs, type Address, type Hex } from 'viem';
 import { config } from './config.ts';
 import { deskAbi } from './abi.ts';
-import { account, desk, deskParams, dexExit, pub, readOrder, relayerAccount, wallet } from './chain.ts';
+import { account, desk, deskParams, dexExit, pub, readOrder, relayerAccount, serial, wallet } from './chain.ts';
 import * as paycrest from './paycrest.ts';
 import { store } from './store.ts';
 import { kick, quoteNaira } from './worker.ts';
@@ -176,8 +176,11 @@ async function relay(c: { req: { header(k: string): string | undefined } }, inte
     args,
     account: relayerAccount,
   } as never);
-  const hash = await wallet.writeContract(request as never);
-  const receipt = await pub.waitForTransactionReceipt({ hash, timeout: 90_000 });
+  const w = wallet;
+  const { hash, receipt } = await serial(async () => {
+    const hash = await w.writeContract(request as never);
+    return { hash, receipt: await pub.waitForTransactionReceipt({ hash, timeout: 90_000 }) };
+  });
   if (receipt.status !== 'success') throw new Error(`Transaction reverted (${hash})`);
   const [ev] = parseEventLogs({ abi: deskAbi, logs: receipt.logs, eventName: 'Opened' }) as unknown as { args: { id: bigint } }[];
   const orderId = Number(ev.args.id);

@@ -25,13 +25,24 @@ export function desk(): Address {
   return config.desk;
 }
 
+// One relayer account sends everything, so its transactions go out one at a time
+// (parallel sends would race for the same nonce).
+let queue: Promise<unknown> = Promise.resolve();
+export function serial<T>(fn: () => Promise<T>): Promise<T> {
+  const run = queue.then(fn, fn);
+  queue = run.catch(() => {});
+  return run;
+}
+
 /** Send a desk transaction from the relayer and wait for it. */
-export async function deskWrite(functionName: string, args: readonly unknown[]) {
-  if (!wallet) throw new Error('RELAYER_KEY is not set');
-  const hash = await wallet.writeContract({ address: desk(), abi: deskAbi, functionName, args } as never);
-  const receipt = await pub.waitForTransactionReceipt({ hash, timeout: 90_000 });
-  if (receipt.status !== 'success') throw new Error(`${functionName} reverted (${hash})`);
-  return { hash, receipt };
+export function deskWrite(functionName: string, args: readonly unknown[]) {
+  return serial(async () => {
+    if (!wallet) throw new Error('RELAYER_KEY is not set');
+    const hash = await wallet.writeContract({ address: desk(), abi: deskAbi, functionName, args } as never);
+    const receipt = await pub.waitForTransactionReceipt({ hash, timeout: 90_000 });
+    if (receipt.status !== 'success') throw new Error(`${functionName} reverted (${hash})`);
+    return { hash, receipt };
+  });
 }
 
 export const STATUS = ['none', 'open', 'taken', 'paid', 'refunded'] as const;

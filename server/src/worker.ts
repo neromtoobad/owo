@@ -118,6 +118,7 @@ async function work(id: number) {
     const ref: Hex = m.paycrestOrderId ? (m.paycrestOrderId as Hex) : keccak256(toBytes(`owo-demo:${config.net}:${id}`));
     const { hash } = await deskWrite('settle', [BigInt(id), BigInt(Math.floor(m.naira! * 100)), ref]);
     m.settleTx = hash;
+    m.error = undefined;
     step(m, 'settled');
     console.log(`order ${id}: paid ₦${m.naira} (${m.mode})`);
   } catch (e) {
