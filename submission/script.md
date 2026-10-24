@@ -34,4 +34,4 @@ On screen: test output, the live URL, and roadmap chips.
 ## 1:55–2:00 · Close
 > Owo. Your Bitcoin, in naira.
 
-On screen: logo, owo-production-f83c.up.railway.app, github.com/neromtoobad/owo.
+On screen: logo, owo.nerom.site, github.com/neromtoobad/owo.

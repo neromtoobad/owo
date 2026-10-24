@@ -33,6 +33,8 @@ The signed intent binds the owner, amount, naira floor and a salted hash of the 
 
 **How MUSD is positioned.** MUSD is the asset being cashed out, and Mezo's trove is where the money comes from. Owo also exits its own MUSD through Mezo's protocol redemption (`TroveManager.redeemCollateral`, 0.75% fee) rather than the thin pools, which costs less than selling and supports the peg. The redemption planner uses HintHelpers and SortedTroves. It models a quirk we found: a redemption smaller than the riskiest trove's net debt reverts. So the desk batches (≥ ~1,803 MUSD on testnet today) and adds an interest buffer.
 
+**Business model.** Owo charges a 1% fee per cash-out, shown up front in the quote. It covers the desk's 0.75% redemption exit and gas. The user still gets more naira than selling on Mezo's DEX alone, which loses about 1.25% even at 100 MUSD, before any exchange or P2P costs.
+
 **Integration findings** (documented in the README):
 1. `withdrawMUSD` always makes a native call to the recipient for the collateral change, 0 BTC when only MUSD is drawn. A contract recipient therefore needs `receive()`.
 2. `HintHelpers.getRedemptionHints` can return a truncated amount that `TroveManager` will reject.
@@ -58,11 +60,11 @@ The signed intent binds the owner, amount, naira floor and a salted hash of the 
 **Project status:** Entirely new (built during the hackathon).
 
 **Project readiness:** Testnet deployment.
-- **Live app:** https://owo-production-f83c.up.railway.app
+- **Live app:** https://owo.nerom.site
 - **Contract:** OwoDesk [`0x62465d6c87fA5551a379Ca12F135173ed8dAd8CD`](https://explorer.test.mezo.org/address/0x62465d6c87fA5551a379Ca12F135173ed8dAd8CD)
 - **Real testnet cash-outs settled on-chain:**
-  - [Order #1](https://owo-production-f83c.up.railway.app/order/1): borrow route, 50 MUSD to ₦68,597.78.
-  - [Order #2](https://owo-production-f83c.up.railway.app/order/2): wallet route, 120 MUSD to ₦164,610.81.
+  - [Order #1](https://owo.nerom.site/order/1): borrow route, 50 MUSD to ₦68,597.78.
+  - [Order #2](https://owo.nerom.site/order/2): wallet route, 120 MUSD to ₦164,610.81.
 - **Payouts:** on testnet the bank transfer is simulated and labelled as such, because test MUSD has no value. The live Paycrest payout path is built and was rehearsed against Paycrest's Base mainnet Gateway on a fork.
 - **Try it without real bank details:** choose "Owo Test Bank (testnet demo)" with any 10-digit number. To get test MUSD, open a trove at testnet.mezo.org; for test BTC use faucet.test.mezo.org.
 
@@ -74,9 +76,9 @@ The signed intent binds the owner, amount, naira floor and a salted hash of the 
 **Team info:** neromtoobad (solo builder: contracts, relayer, web, design). GitHub: github.com/neromtoobad. X: @neromtoobad.
 
 **Links:**
-- **Live:** https://owo-production-f83c.up.railway.app
+- **Live:** https://owo.nerom.site
 - **GitHub:** https://github.com/neromtoobad/owo
-- **Deck:** https://owo-production-f83c.up.railway.app/owo-deck.pdf
+- **Deck:** https://owo.nerom.site/owo-deck.pdf
 - **Video:** (YouTube link once uploaded)
 
 **Updates in this Wave** (form field): First submission, built from scratch in Wave 1. It includes:
