@@ -1,6 +1,6 @@
 # Owo: your Bitcoin, in naira
 
-**Borrow against your BTC on Mezo and get naira in any Nigerian bank account, with one signature and no BTC for gas.**
+**Borrow against your BTC on Mezo and get naira in any Nigerian bank account, with two signatures and no BTC for gas.**
 
 Owo is a cash-out desk for MUSD, Mezo's Bitcoin-backed stablecoin. Today, turning MUSD into money you can spend in Nigeria takes about six steps: swap MUSD on a thin DEX (Mezo's MUSD/USDC pool loses 1.3% on 100 MUSD and 3.8% on 1,000), bridge, send to an exchange, sell P2P, and wait. Owo does it in one step:
 

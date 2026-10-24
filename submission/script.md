@@ -8,7 +8,7 @@ On screen, one beat each:
 1. "₿ → ₦"
 2. "Your Bitcoin."
 3. "In naira."
-4. "In one signature."
+4. "Two signatures. No gas."
 5. The Owo logo.
 
 ## 0:12–0:30 · The problem
