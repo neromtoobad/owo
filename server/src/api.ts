@@ -9,6 +9,7 @@ import { account, desk, deskParams, dexExit, pub, readOrder, relayerAccount, wal
 import * as paycrest from './paycrest.ts';
 import { store } from './store.ts';
 import { kick, quoteNaira } from './worker.ts';
+import { planRedemption } from './redeem.ts';
 
 export const app = new Hono();
 
@@ -92,7 +93,12 @@ app.get('/api/quote', async (c) => {
   const q = quoteNaira(musd, rate);
   const minNaira = Math.floor(q.naira * (1 - config.slippageBps / 10_000));
   const dex = await dexExit(musd);
-  const redeemUsd = musd * (1 - config.redemptionFeeBps / 10_000);
+  // What the desk's own exit costs: a live redemption plan from Mezo's HintHelpers.
+  let redeem = { usdOut: musd * (1 - config.redemptionFeeBps / 10_000), lossPct: config.redemptionFeeBps / 100, live: false };
+  try {
+    const p = await planRedemption(musd);
+    if (Number(p.musd) > 0) redeem = { ...redeem, lossPct: p.lossPct, live: true };
+  } catch {}
   return c.json({
     musd,
     rate,
@@ -102,7 +108,7 @@ app.get('/api/quote', async (c) => {
     naira: q.naira,
     minNaira,
     dex: dex ? { musdIn: musd, usdOut: dex.usdOut, lossPct: dex.lossPct, naira: Math.floor(dex.usdOut * rate) } : null,
-    redeem: { usdOut: redeemUsd, lossPct: config.redemptionFeeBps / 100 },
+    redeem,
     expiresAt: Date.now() + 60_000,
   });
 });

@@ -59,7 +59,7 @@ async function main() {
   const deployHash = await adminWallet.deployContract({
     abi: deskArt.abi,
     bytecode: deskArt.bytecode.object,
-    args: [MUSD, BOS, admin.address, relayer.address, admin.address],
+    args: [MUSD, BOS, admin.address, relayer.address, relayer.address],
   });
   const desk = (await pub.waitForTransactionReceipt({ hash: deployHash })).contractAddress!;
   ok(desk, `OwoDesk deployed at ${desk}`);
@@ -183,6 +183,19 @@ async function main() {
     ok(stats.paid === 2, `stats: ${stats.paid} paid, ₦${Math.round(stats.nairaPaid).toLocaleString()}`);
     const list = await j(`/api/orders?owner=${user.address}`);
     ok(list.length === 2, 'order history lists both');
+    // The treasury exits through Mezo redemption, not the DEX. Batch first: Mezo only
+    // redeems once the batch clears the riskiest trove.
+    const musdAbi = parseAbi(['function transfer(address,uint256) returns (bool)', 'function balanceOf(address) view returns (uint256)']);
+    const bal = await pub.readContract({ address: MUSD, abi: musdAbi, functionName: 'balanceOf', args: [user.address] });
+    const t = await userWallet.writeContract({ address: MUSD, abi: musdAbi, functionName: 'transfer', args: [relayer.address, bal] });
+    await pub.waitForTransactionReceipt({ hash: t });
+    const red = spawn('node', ['scripts/redeem.ts'], { cwd: join(root, 'server'), env: { ...process.env, MEZO_RPC: RPC, MEZO_NET: 'testnet', DESK: desk, RELAYER_KEY: relayerKey, DATA_DIR: tmpdir() } });
+    let out = '';
+    red.stdout.on('data', (d) => (out += d));
+    red.stderr.on('data', (d) => (out += d));
+    await new Promise((r) => red.on('close', r));
+    if (!/redeemed [0-9.]+ MUSD/.test(out)) console.log(out.split('\n').filter((l) => !/^\s+at /.test(l)).slice(0, 25).join('\n'));
+    ok(/redeemed [0-9.]+ MUSD → [0-9.]+ BTC/.test(out), `treasury redeemed via TroveManager: ${out.trim().split('\n').pop()}`);
     console.log('\nE2E PASSED');
   } finally {
     server.kill();

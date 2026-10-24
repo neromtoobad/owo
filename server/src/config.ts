@@ -29,6 +29,8 @@ const NETS = {
     borrowerOpsSignatures: '0xD757e3646AF370b15f32EB557F0F8380Df7D639e',
     troveManager: '0xE47c80e8c23f6B4A1aE41c34837a0599D5D16bb0',
     priceFeed: '0x86bCF0841622a5dAC14A313a15f96A95421b9366',
+    hintHelpers: '0x4e4cBA3779d56386ED43631b4dCD6d8EacEcBCF6',
+    sortedTroves: '0x722E4D24FD6Ff8b0AC679450F3D91294607268fA',
   },
   mainnet: {
     chainId: 31612,
@@ -40,6 +42,8 @@ const NETS = {
     borrowerOpsSignatures: '0xB57ab578BF20b3e318f3EFAA587C51DBccE5df7a',
     troveManager: '0x94AfB503dBca74aC3E4929BACEeDfCe19B93c193',
     priceFeed: '0xc5aC5A8892230E0A3e1c473881A2de7353fFcA88',
+    hintHelpers: '0xD267b3bE2514375A075fd03C3D9CBa6b95317DC3',
+    sortedTroves: '0x8C5DB4C62BF29c1C4564390d10c20a47E0b2749f',
   },
 } as const;
 
@@ -64,6 +68,10 @@ export const config = {
   borrowerOpsSignatures: n.borrowerOpsSignatures as Address,
   troveManager: n.troveManager as Address,
   priceFeed: n.priceFeed as Address,
+  hintHelpers: n.hintHelpers as Address,
+  sortedTroves: n.sortedTroves as Address,
+  // Holds the MUSD the desk settles and redeems it for BTC. Defaults to the relayer key.
+  treasuryKey: (env('TREASURY_KEY') ?? env('RELAYER_KEY')) as Hex | undefined,
   desk: (env('DESK') as Address | undefined) ?? deployment(),
   relayerKey: env('RELAYER_KEY') as Hex | undefined,
   feeBps: Number(env('FEE_BPS', '50')),

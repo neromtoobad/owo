@@ -14,7 +14,22 @@ export const troveManagerAbi = parseAbi([
   'function getTroveColl(address) view returns (uint256)',
   'function getTroveDebt(address) view returns (uint256)',
   'function getCurrentICR(address,uint256) view returns (uint256)',
+  'function getEntireDebtAndColl(address) view returns (uint256 coll, uint256 principal, uint256 interest, uint256 pendingColl, uint256 pendingPrincipal, uint256 pendingInterest)',
+  'function redeemCollateral(uint256 amount, address firstHint, address upperPartialHint, address lowerPartialHint, uint256 partialNICR, uint256 maxIterations)',
 ]);
+
+export const hintHelpersAbi = parseAbi([
+  'function getRedemptionHints(uint256 amount, uint256 price, uint256 maxIterations) view returns (address firstRedemptionHint, uint256 partialRedemptionHintNICR, uint256 truncatedAmount)',
+  'function getApproxHint(uint256 CR, uint256 numTrials, uint256 seed) view returns (address hint, uint256 diff, uint256 latestSeed)',
+]);
+
+export const sortedTrovesAbi = parseAbi([
+  'function getLast() view returns (address)',
+  'function getPrev(address) view returns (address)',
+  'function findInsertPosition(uint256 NICR, address prevId, address nextId) view returns (address, address)',
+]);
+
+export const borrowerOpsAbi = parseAbi(['function minNetDebt() view returns (uint256)']);
 
 export const priceFeedAbi = parseAbi(['function fetchPrice() view returns (uint256)']);
 
