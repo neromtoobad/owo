@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Owo · Pitch deck</title>
+<meta name="description" content="Owo, a Mezo Buildathon Wave 1 entry: borrow against your BTC on Mezo and get naira in any Nigerian bank." />
+<style>
+/*FONTS*/
+:root {
+  --cream: #f7f3ea; --cream-2: #f1ebdd; --surface: #ffffff; --surface-2: #fbf8f2;
+  --ink: #121a14; --ink-2: #454c45; --ink-3: #767b72; --line: #e6dfcf; --line-2: #efe9dc;
+  --green: #0b6b43; --green-deep: #08402a; --green-tint: #e3f0e7; --green-tint-2: #f0f7f2;
+  --ochre: #e39a2d; --ochre-ink: #8a5508; --ochre-tint: #fcefd9; --red: #b4372c; --red-tint: #fbe8e4;
+  --display: "Bricolage Grotesque", "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --body: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: #e9e3d4; color: var(--ink); font-family: var(--body); -webkit-font-smoothing: antialiased; overflow: hidden; }
+p { margin: 0; }
+h1, h2, h3, h4 { margin: 0; font-family: var(--display); font-weight: 800; letter-spacing: -0.035em; line-height: 1.02; }
+
+/* ---------- stage ---------- */
+.deck { position: fixed; inset: 0; }
+.slide {
+  position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+  margin: -540px 0 0 -960px; transform: scale(var(--s, 0.5));
+  background: var(--cream); overflow: hidden; display: none;
+  padding: 96px 120px 0; box-shadow: 0 30px 80px -30px rgba(8, 64, 42, 0.35);
+}
+.slide.on { display: block; }
+.slide.dark { background: var(--green-deep); color: var(--cream); }
+
+/* chrome */
+.foot { position: absolute; left: 120px; right: 120px; bottom: 48px; display: flex; align-items: center; justify-content: space-between; font-size: 20px; font-weight: 600; color: var(--ink-3); }
+.dark .foot { color: rgba(247, 243, 234, 0.55); }
+.foot .brand { display: inline-flex; align-items: center; gap: 12px; font-family: var(--display); font-weight: 800; font-size: 26px; letter-spacing: -0.05em; color: var(--ink); }
+.dark .foot .brand { color: var(--cream); }
+.foot .brand svg { width: 30px; height: 30px; }
+.foot .mid { letter-spacing: 0.02em; }
+.foot .num { font-variant-numeric: tabular-nums; }
+
+.eyebrow { font-size: 22px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); margin-bottom: 26px; display: flex; align-items: center; gap: 14px; }
+.eyebrow::before { content: ""; width: 34px; height: 4px; border-radius: 4px; background: var(--ochre); }
+.dark .eyebrow { color: #9fd3b6; }
+.title { font-size: 84px; max-width: 1500px; }
+.title .g { color: var(--green); }
+.dark .title .g { color: #9fd3b6; }
+.lede { font-size: 30px; line-height: 1.45; color: var(--ink-2); max-width: 1180px; margin-top: 26px; }
+.dark .lede { color: rgba(247, 243, 234, 0.78); }
+.hl { position: relative; white-space: nowrap; color: var(--green); z-index: 0; }
+.hl::after { content: ""; position: absolute; left: 0; right: 3%; bottom: 0.13em; height: 0.26em; border-radius: 99px; background: var(--ochre); opacity: 0.55; z-index: -1; transform: skewX(-12deg); }
+.naira { font-family: var(--display); font-weight: 800; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--mono); font-weight: 500; letter-spacing: -0.01em; }
+.tnum { font-variant-numeric: tabular-nums; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 28px; box-shadow: 0 1px 2px rgba(18,26,20,0.04), 0 18px 44px -22px rgba(18,26,20,0.22); }
+.chip { display: inline-flex; align-items: center; gap: 10px; padding: 10px 20px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: 22px; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+.chip.ochre { background: var(--ochre-tint); border-color: transparent; color: var(--ochre-ink); }
+.chip.green { background: var(--green-tint); border-color: transparent; color: var(--green-deep); }
+.ar { width: 1em; height: 1em; vertical-align: -0.12em; }
+.src { font-size: 18px; color: var(--ink-3); font-weight: 600; }
+.dark .src { color: rgba(247, 243, 234, 0.5); }
+
+/* ---------- 1 title ---------- */
+.s-title { padding-top: 0; }
+.s-title .glow { position: absolute; right: -240px; bottom: -380px; width: 1200px; height: 1200px; border-radius: 50%; background: radial-gradient(closest-side, rgba(227,154,45,0.20), transparent 70%); }
+.s-title .left { position: absolute; left: 120px; top: 150px; width: 1000px; }
+.s-title .logo-xl { display: flex; align-items: center; gap: 20px; font-family: var(--display); font-weight: 800; font-size: 64px; letter-spacing: -0.05em; }
+.s-title .logo-xl svg { width: 64px; height: 64px; }
+.s-title h1 { font-size: 176px; letter-spacing: -0.055em; line-height: 0.92; margin-top: 70px; }
+.s-title .sub { font-size: 34px; line-height: 1.4; color: var(--ink-2); margin-top: 40px; max-width: 880px; }
+.s-title .chips { display: flex; gap: 14px; margin-top: 46px; flex-wrap: wrap; }
+.receipt { position: absolute; right: 120px; top: 190px; width: 600px; padding: 0; overflow: hidden; }
+.receipt .top { background: var(--green-deep); color: var(--cream); padding: 40px 44px 44px; position: relative; overflow: hidden; }
+.receipt .top::after { content: ""; position: absolute; right: -120px; top: -60px; width: 340px; height: 340px; border-radius: 50%; border: 44px solid rgba(227,154,45,0.13); }
+.receipt .row1 { display: flex; justify-content: space-between; align-items: center; font-size: 22px; color: rgba(247,243,234,0.7); }
+.receipt .paid { background: #e3f0e7; color: var(--green-deep); font-weight: 800; font-size: 19px; padding: 6px 16px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; }
+.receipt .paid::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--green); }
+.receipt .amt { font-size: 104px; margin-top: 22px; line-height: 1; position: relative; z-index: 1; }
+.receipt .meta { font-size: 22px; color: rgba(247,243,234,0.72); margin-top: 16px; }
+.receipt .steps { padding: 30px 44px 34px; display: grid; gap: 18px; }
+.receipt .st { display: grid; grid-template-columns: 34px 1fr auto; gap: 16px; align-items: center; font-size: 23px; font-weight: 700; }
+.receipt .st .tick { width: 34px; height: 34px; border-radius: 50%; background: var(--green); display: grid; place-items: center; }
+.receipt .st .tick svg { width: 18px; height: 18px; }
+.receipt .st small { font-weight: 600; color: var(--ink-3); font-size: 19px; }
+.receipt .note { border-top: 1px solid var(--line-2); padding: 20px 44px 26px; font-size: 19px; color: var(--ink-3); font-weight: 600; }
+
+/* ---------- 2 problem ---------- */
+.s-problem .cols { display: grid; grid-template-columns: 1fr 720px; gap: 80px; margin-top: 50px; }
+.route { display: grid; gap: 12px; }
+.route .r { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 22px; padding: 13px 24px; border-radius: 20px; background: var(--surface); border: 1px solid var(--line); font-size: 27px; font-weight: 700; }
+.route .r .n { width: 50px; height: 50px; border-radius: 50%; display: grid; place-items: center; background: var(--cream-2); font-family: var(--display); font-size: 26px; color: var(--ink-2); }
+.route .r .loss { font-size: 22px; font-weight: 700; color: var(--red); background: var(--red-tint); padding: 6px 14px; border-radius: 999px; }
+.route .r.ok { background: var(--green-tint-2); border-color: transparent; }
+.route .r.ok .n { background: var(--green); color: #fff; }
+.route .r.ok .tag { font-size: 22px; font-weight: 700; color: var(--green); }
+.route .r.x { color: var(--ink-2); }
+.route .r.x span.t { text-decoration: line-through; text-decoration-color: rgba(180,55,44,0.55); text-decoration-thickness: 3px; }
+.pools { padding: 36px 44px; }
+.pools h3 { font-size: 36px; letter-spacing: -0.03em; }
+.pools .ptab { margin-top: 22px; display: grid; gap: 0; }
+.pools .pr { display: flex; justify-content: space-between; font-size: 24px; padding: 11px 0; border-bottom: 1px solid var(--line-2); }
+.pools .pr b { font-variant-numeric: tabular-nums; }
+.bars { margin-top: 26px; display: grid; gap: 18px; }
+.bar .lbl { display: flex; justify-content: space-between; font-size: 24px; font-weight: 700; margin-bottom: 10px; }
+.bar .lbl span:last-child { color: var(--red); font-variant-numeric: tabular-nums; }
+.bar .track { height: 16px; border-radius: 99px; background: var(--cream-2); overflow: hidden; }
+.bar .fill { height: 100%; border-radius: 99px; background: var(--red); opacity: 0.8; }
+
+/* ---------- 3 solution ---------- */
+.s-solution .steps4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; margin-top: 70px; }
+.step { padding: 40px 36px 40px; position: relative; min-height: 430px; }
+.step .k { font-family: var(--display); font-weight: 800; font-size: 120px; line-height: 0.8; color: var(--green-tint); letter-spacing: -0.06em; }
+.step h3 { font-size: 40px; margin-top: 26px; letter-spacing: -0.03em; }
+.step p { font-size: 24px; line-height: 1.45; color: var(--ink-2); margin-top: 16px; }
+.step.hi { background: var(--green-deep); color: var(--cream); border-color: transparent; }
+.step.hi .k { color: rgba(159,211,182,0.25); }
+.step.hi p { color: rgba(247,243,234,0.8); }
+.routes { display: flex; gap: 16px; align-items: center; margin-top: 44px; font-size: 24px; font-weight: 700; color: var(--ink-2); }
+.routes .mono { font-size: 21px; }
+
+/* ---------- 4 screens ---------- */
+.s-screens .phones { display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px; margin-top: 44px; }
+.phone { display: flex; flex-direction: column; align-items: center; }
+.phone .frame { width: 300px; height: 560px; border-radius: 36px; background: var(--surface); border: 10px solid #1b241d; overflow: hidden; box-shadow: 0 30px 60px -28px rgba(8,64,42,0.45); position: relative; }
+.phone .frame img { width: 100%; display: block; }
+.phone .frame.live { border-color: var(--green); }
+.phone .cap { margin-top: 22px; text-align: center; }
+.phone .cap b { display: block; font-family: var(--display); font-size: 30px; letter-spacing: -0.03em; }
+.phone .cap span { display: block; font-size: 22px; color: var(--ink-2); margin-top: 8px; line-height: 1.4; max-width: 360px; }
+.livetag { position: absolute; top: 14px; right: 14px; z-index: 2; }
+
+/* ---------- 5 architecture ---------- */
+.s-arch .diagram { margin-top: 34px; }
+.s-arch svg text { font-family: var(--body); }
+
+/* ---------- 6 safety ---------- */
+.s-safety .grid { display: grid; grid-template-columns: 1060px 1fr; gap: 44px; margin-top: 44px; }
+.s-safety .sm { padding: 34px 40px 20px; }
+.s-safety .side { display: grid; gap: 18px; align-content: start; }
+.s-safety .box { padding: 24px 30px; }
+.s-safety .box h4 { font-size: 27px; letter-spacing: -0.025em; }
+.s-safety .box p { font-size: 20px; line-height: 1.42; color: var(--ink-2); margin-top: 8px; }
+.s-safety .fields { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 2px; }
+.s-safety .fields .chip { font-size: 17px; padding: 5px 13px; }
+
+/* ---------- 7 integration ---------- */
+.s-mezo .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; margin-top: 40px; }
+.prim { display: grid; gap: 14px; }
+.prim .p { padding: 22px 30px; display: grid; grid-template-columns: 1fr; gap: 8px; }
+.prim .p .fn { font-family: var(--mono); font-size: 23px; color: var(--green-deep); font-weight: 500; }
+.prim .p .what { font-size: 22px; color: var(--ink-2); line-height: 1.45; }
+.gotchas h3 { font-size: 34px; letter-spacing: -0.03em; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; }
+.gotcha { padding: 30px 34px; background: var(--ochre-tint); border-radius: 26px; margin-bottom: 20px; }
+.gotcha .h { font-size: 25px; font-weight: 800; color: var(--ochre-ink); letter-spacing: 0.02em; text-transform: uppercase; font-size: 18px; }
+.gotcha p { font-size: 23px; line-height: 1.45; margin-top: 10px; color: var(--ink); }
+.gotcha p + p { margin-top: 12px; color: var(--ink-2); }
+.gotcha code, .prim code { font-family: var(--mono); font-size: 0.92em; background: rgba(255,255,255,0.7); padding: 1px 7px; border-radius: 7px; }
+
+/* ---------- 8 proof ---------- */
+.s-proof .grid { display: grid; grid-template-columns: 310px 310px 1fr; gap: 34px; margin-top: 40px; }
+.shot { border-radius: 30px; overflow: hidden; height: 600px; border: 8px solid #1b241d; background: var(--cream); box-shadow: 0 30px 60px -28px rgba(8,64,42,0.45); }
+.shot img { width: 100%; display: block; }
+.shotcap { font-size: 21px; font-weight: 700; margin-top: 16px; color: var(--ink-2); text-align: center; }
+.facts { display: grid; gap: 16px; align-content: start; }
+.fact { padding: 22px 30px; }
+.fact .k { font-size: 18px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
+.fact .v { font-size: 27px; font-weight: 700; margin-top: 8px; line-height: 1.35; }
+.fact .v.mono { font-size: 24px; color: var(--green-deep); }
+.fact .sub { font-size: 21px; color: var(--ink-2); margin-top: 6px; line-height: 1.45; }
+.tests { display: grid; grid-template-columns: auto 1fr; gap: 6px 26px; margin-top: 12px; align-items: baseline; }
+.tests .n { font-family: var(--display); font-weight: 800; font-size: 48px; letter-spacing: -0.04em; color: var(--green); line-height: 1; }
+.tests .d { font-size: 21px; color: var(--ink-2); line-height: 1.4; }
+.honest { padding: 18px 28px; border-radius: 22px; background: var(--green-tint-2); border: 1px solid #cfe5d7; font-size: 21px; line-height: 1.45; color: var(--green-deep); font-weight: 600; }
+
+/* ---------- 9 business ---------- */
+.s-biz .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 44px; }
+.big { padding: 40px 44px; }
+.big .rule { height: 1px; background: var(--line-2); margin: 28px 0 24px; }
+.big h4 { font-size: 28px; letter-spacing: -0.025em; }
+.big h4 + p { margin-top: 8px; font-size: 22px; }
+.big p.src { font-size: 18px; }
+.big .n { font-family: var(--display); font-weight: 800; font-size: 132px; letter-spacing: -0.06em; line-height: 0.9; color: var(--green-deep); }
+.big h3 { font-size: 34px; margin-top: 20px; letter-spacing: -0.03em; }
+.big p { font-size: 24px; color: var(--ink-2); margin-top: 12px; line-height: 1.45; }
+.exit h3 { font-size: 34px; letter-spacing: -0.03em; }
+.exit .bars2 { display: grid; gap: 26px; margin-top: 30px; }
+.exit .b .lbl { display: flex; justify-content: space-between; font-size: 24px; font-weight: 700; margin-bottom: 10px; }
+.exit .b .lbl .v { font-variant-numeric: tabular-nums; }
+.exit .b .track { height: 22px; border-radius: 99px; background: var(--cream-2); }
+.exit .b .fill { height: 100%; border-radius: 99px; }
+.who { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; margin-top: 34px; }
+.who .card { padding: 30px 36px; }
+.who h4 { font-size: 28px; letter-spacing: -0.025em; }
+.who p { font-size: 22px; color: var(--ink-2); margin-top: 10px; line-height: 1.45; }
+.ccy { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.ccy .chip { font-size: 21px; padding: 8px 18px; }
+
+/* ---------- 10 roadmap ---------- */
+.s-road .lanes { display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: 30px; margin-top: 60px; }
+.lane { padding: 40px 40px 36px; }
+.lane .when { font-size: 20px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
+.lane h3 { font-size: 44px; margin-top: 12px; letter-spacing: -0.035em; }
+.lane ul { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 18px; }
+.lane li { font-size: 24px; line-height: 1.4; padding-left: 36px; position: relative; color: var(--ink-2); }
+.lane li::before { content: ""; position: absolute; left: 0; top: 0.42em; width: 16px; height: 16px; border-radius: 50%; border: 3px solid var(--green); }
+.lane.done li::before { background: var(--green); }
+.lane li b { color: var(--ink); }
+.lane.next { background: var(--green-deep); color: var(--cream); border-color: transparent; }
+.lane.next .when { color: #9fd3b6; }
+.lane.next li { color: rgba(247,243,234,0.8); }
+.lane.next li b { color: var(--cream); }
+.lane.next li::before { border-color: var(--ochre); }
+
+/* ---------- 11 team ---------- */
+.s-team .row { display: grid; grid-template-columns: 520px 1fr; gap: 80px; margin-top: 80px; align-items: center; }
+.avatar { width: 520px; height: 520px; border-radius: 48px; background: var(--green-deep); display: grid; place-items: center; position: relative; overflow: hidden; }
+.avatar::after { content: ""; position: absolute; right: -140px; bottom: -140px; width: 420px; height: 420px; border-radius: 50%; border: 60px solid rgba(227,154,45,0.16); }
+.avatar svg { width: 240px; height: 240px; }
+.who2 h2 { font-size: 96px; letter-spacing: -0.05em; }
+.who2 .role { font-size: 34px; color: var(--green); font-weight: 800; margin-top: 18px; font-family: var(--display); letter-spacing: -0.02em; }
+.who2 .built { margin-top: 44px; display: grid; gap: 18px; }
+.who2 .built div { font-size: 27px; color: var(--ink-2); line-height: 1.4; padding-left: 34px; position: relative; }
+.who2 .built div::before { content: ""; position: absolute; left: 0; top: 0.5em; width: 18px; height: 4px; border-radius: 4px; background: var(--ochre); }
+.who2 .built b { color: var(--ink); }
+.handles { display: flex; gap: 16px; margin-top: 46px; }
+.handles .chip { font-size: 25px; padding: 14px 26px; }
+
+/* ---------- 12 close ---------- */
+.s-close .glow { position: absolute; left: 50%; top: 40%; width: 1400px; height: 1400px; margin: -700px 0 0 -700px; border-radius: 50%; background: radial-gradient(closest-side, rgba(159,211,182,0.10), transparent 70%); }
+.s-close .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding-bottom: 60px; }
+.s-close .mark svg { width: 120px; height: 120px; }
+.s-close h1 { font-size: 168px; letter-spacing: -0.055em; line-height: 0.95; margin-top: 40px; }
+.s-close h1 .hl { color: var(--ochre); }
+.s-close h1 .hl::after { display: none; }
+.s-close .links { display: grid; grid-template-columns: auto auto; gap: 14px 30px; margin-top: 64px; font-size: 30px; text-align: left; }
+.s-close .links .k { color: rgba(247,243,234,0.55); font-weight: 700; font-size: 22px; letter-spacing: 0.1em; text-transform: uppercase; padding-top: 6px; }
+.s-close .links .v { font-weight: 700; color: var(--cream); }
+.s-close .links .v.mono { font-size: 26px; }
+.s-close .try { margin-top: 46px; font-size: 24px; color: rgba(247,243,234,0.7); }
+
+/* ---------- nav hint ---------- */
+.hud { position: fixed; right: 18px; bottom: 14px; font: 600 13px var(--body); color: var(--ink-3); background: rgba(255,255,255,0.7); padding: 6px 12px; border-radius: 999px; user-select: none; }
+
+/* ---------- print: one slide per page ---------- */
+@page { size: 1920px 1080px; margin: 0; }
+@media print {
+  html, body { height: auto; overflow: visible; background: var(--cream); }
+  .deck { position: static; }
+  .slide { display: block !important; position: relative; left: 0; top: 0; margin: 0; transform: none !important; box-shadow: none; page-break-after: always; break-after: page; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .slide:last-child { page-break-after: auto; break-after: auto; }
+  .hud { display: none; }
+  /* blurred shadows rasterize as grey boxes in some PDF viewers */
+  .card, .phone .frame, .shot { box-shadow: none !important; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="cowrie" viewBox="0 0 32 32"><ellipse cx="16" cy="16" rx="11" ry="14" fill="#0B6B43" transform="rotate(-28 16 16)"/><ellipse cx="16" cy="16" rx="8.2" ry="11.2" fill="#08402A" transform="rotate(-28 16 16)"/><path d="M10.6 23.4c1.6-2.2 2.2-4.2 3.6-6.6 1.4-2.5 3.6-4.6 7.2-8.2" stroke="#F7F3EA" stroke-width="2.2" fill="none" stroke-linecap="round"/></symbol>
+    <symbol id="cowrie-light" viewBox="0 0 32 32"><ellipse cx="16" cy="16" rx="11" ry="14" fill="#9FD3B6" transform="rotate(-28 16 16)"/><ellipse cx="16" cy="16" rx="8.2" ry="11.2" fill="#0B6B43" transform="rotate(-28 16 16)"/><path d="M10.6 23.4c1.6-2.2 2.2-4.2 3.6-6.6 1.4-2.5 3.6-4.6 7.2-8.2" stroke="#F7F3EA" stroke-width="2.2" fill="none" stroke-linecap="round"/></symbol>
+    <symbol id="arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<main class="deck" id="deck">
+
+<!-- 1 · Title -->
+<section class="slide s-title" data-title="Title">
+  <div class="glow"></div>
+  <div class="left">
+    <div class="logo-xl"><svg><use href="#cowrie"/></svg>owo</div>
+    <h1>Your Bitcoin,<br/><span class="hl">in naira.</span></h1>
+    <p class="sub">Borrow MUSD against your BTC on Mezo and get naira in any Nigerian bank account. One flow, two signatures, no BTC for gas.</p>
+    <div class="chips">
+      <span class="chip green">Track 2 · Access &amp; Distribution</span>
+      <span class="chip">Mezo Buildathon · Wave 1</span>
+      <span class="chip ochre">Live on Mezo testnet</span>
+    </div>
+  </div>
+  <div class="card receipt">
+    <div class="top">
+      <div class="row1"><span>Cash-out #1 · Mezo testnet</span><span class="paid">Paid</span></div>
+      <div class="naira amt">₦68,597.78</div>
+      <div class="meta">50 MUSD borrowed from a trove by signature</div>
+    </div>
+    <div class="steps">
+      <div class="st"><span class="tick"><svg><use href="#check"/></svg></span>MUSD locked on Mezo<small>OwoDesk</small></div>
+      <div class="st"><span class="tick"><svg><use href="#check"/></svg></span>Picked up by the Owo desk<small>relayer</small></div>
+      <div class="st"><span class="tick"><svg><use href="#check"/></svg></span>Naira payout (demo mode)<small>Paycrest rate</small></div>
+      <div class="st"><span class="tick"><svg><use href="#check"/></svg></span>Settled on Mezo<small>MUSD released</small></div>
+    </div>
+    <div class="note">A real order on the live app. On testnet the bank transfer is simulated.</div>
+  </div>
+  <div class="foot"><span></span><span class="mid">owo-production-f83c.up.railway.app</span><span class="num"></span></div>
+</section>
+
+<!-- 2 · Problem -->
+<section class="slide s-problem" data-title="Problem">
+  <div class="eyebrow">The problem</div>
+  <h2 class="title" style="font-size:76px;max-width:none">You hold Bitcoin. Rent in Lagos is due <span class="g">in naira.</span></h2>
+  <div class="cols">
+    <div>
+      <div class="route">
+        <div class="r ok"><span class="n">1</span><span class="t">Borrow MUSD against BTC on Mezo</span><span class="tag">works today</span></div>
+        <div class="r x"><span class="n">2</span><span class="t">Swap MUSD on a thin DEX pool</span><span class="loss">slippage</span></div>
+        <div class="r x"><span class="n">3</span><span class="t">Bridge to another chain</span><span class="loss">fees</span></div>
+        <div class="r x"><span class="n">4</span><span class="t">Send to an exchange</span><span class="loss">fees</span></div>
+        <div class="r x"><span class="n">5</span><span class="t">Sell peer to peer</span><span class="loss">spread</span></div>
+        <div class="r x"><span class="n">6</span><span class="t">Wait for the naira to land</span><span class="loss">time</span></div>
+      </div>
+    </div>
+    <div class="card pools">
+      <h3>Mezo's own pools are thin</h3>
+      <div class="ptab">
+        <div class="pr"><span>MUSD / mUSDC</span><b>4.8k / 6.8k</b></div>
+        <div class="pr"><span>MUSD / mUSDT</span><b>7.7k / 5.5k</b></div>
+        <div class="pr"><span>BTC / MUSD</span><b>0.48 BTC / 38.9k</b></div>
+      </div>
+      <div class="bars">
+        <div class="bar"><div class="lbl"><span>Sell 100 MUSD for USDC</span><span>−1.25%</span></div><div class="track"><div class="fill" style="width:27.8%"></div></div></div>
+        <div class="bar"><div class="lbl"><span>Sell 1,000 MUSD for USDC</span><span>−3.8%</span></div><div class="track"><div class="fill" style="width:84.4%"></div></div></div>
+        <div class="bar"><div class="lbl"><span>Sell 1,000 MUSD for BTC</span><span>−4.5%</span></div><div class="track"><div class="fill" style="width:100%"></div></div></div>
+      </div>
+      <p class="src" style="margin-top:22px">Mezo mainnet pools, read on-chain Oct 24, 2026.</p>
+    </div>
+  </div>
+  <div class="foot"><span class="brand"><svg><use href="#cowrie"/></svg>owo</span><span class="mid">Mezo Buildathon · Wave 1</span><span class="num"></span></div>
+</section>
+
+<!-- 3 · Solution -->
+<section class="slide s-solution" data-title="Solution">
+  <div class="eyebrow">The solution</div>
+  <h2 class="title">One flow. Two signatures. <span class="g">No BTC for gas.</span></h2>
+  <div class="steps4">
+    <div class="card step"><div class="k">01</div><h3>Choose an amount</h3><p>Draw it from your Mezo trove, or use MUSD already in your wallet. The naira amount is shown up front at Paycrest's live rate.</p></div>
+    <div class="card step"><div class="k">02</div><h3>Pick your bank</h3><p>Any of 174 Nigerian banks. Owo reads the account name back to you before you sign.</p></div>
+    <div class="card step hi"><div class="k">03</div><h3>Sign twice</h3><p>No transactions to send. Your trove mints MUSD straight into a locked order on OwoDesk, and Owo's relayer pays the gas.</p></div>
+    <div class="card step"><div class="k">04</div><h3>Get paid</h3><p>The desk pays the naira out through Paycrest, an open stablecoin-to-bank network, and only then takes your MUSD.</p></div>
+  </div>
+  <div class="routes">
+    <span>Three ways in:</span>
+    <span class="chip"><span class="mono">borrowAndCashOut</span>&nbsp;gasless, mints from the trove</span>
+    <span class="chip"><span class="mono">cashOutWithPermit</span>&nbsp;gasless</span>
+    <span class="chip"><span class="mono">cashOut</span>&nbsp;wallet tx</span>
+  </div>
+  <div class="foot"><span class="brand"><svg><use href="#cowrie"/></svg>owo</span><span class="mid">Mezo Buildathon · Wave 1</span><span class="num"></span></div>
+</section>
+
+<!-- 4 · Product -->
+<section class="slide s-screens" data-title="Product">
+  <div class="eyebrow">The product</div>
+  <h2 class="title" style="font-size:76px;max-width:none">From trove to bank account in <span class="g">four screens.</span></h2>
+  <div class="phones">
+    <div class="phone"><div class="frame"><img src="assets/mobile-375-amount-borrow.jpg" alt="Amount step"/></div><div class="cap"><b>Borrow route</b><span>Trove health before and after</span></div></div>
+    <div class="phone"><div class="frame"><img src="assets/mobile-375-bank-verified.jpg" alt="Bank step"/></div><div class="cap"><b>Name check</b><span>Account name read back first</span></div></div>
+    <div class="phone"><div class="frame"><img src="assets/mobile-375-review.jpg" alt="Review step"/></div><div class="cap"><b>Review and sign</b><span>Naira floor, fee, relayer pays gas</span></div></div>
+    <div class="phone"><div class="frame live"><img src="assets/live-order1.jpg" alt="Live order 1, paid"/></div><div class="cap"><b>Paid · live order #1</b><span>Each Mezo step links to the explorer</span></div></div>
+  </div>
+  <div class="foot"><span class="brand"><svg><use href="#cowrie"/></svg>owo</span><span class="mid">First three screens use mock data; the last is a real testnet order</span><span class="num"></span></div>
+</section>
+
+<!-- 5 · Architecture -->
+<section class="slide s-arch" data-title="How it works">
+  <div class="eyebrow">How it works</div>
+  <h2 class="title" style="font-size:72px;max-width:none">One approval borrows <span class="g">and opens the order.</span></h2>
+  <div class="diagram">
+    <svg viewBox="0 0 1680 690" width="1680" height="690" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#0b6b43"/></marker>
+        <marker id="ahO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8a5508"/></marker>
+      </defs>
+      <!-- regions -->
+      <rect x="400" y="176" width="760" height="514" rx="30" fill="#efe9dc" />
+      <text x="650" y="214" font-size="18" font-weight="800" letter-spacing="2.2" fill="#0b6b43">MEZO · CHAIN 31611</text>
+      <rect x="1220" y="176" width="440" height="514" rx="30" fill="#e8eef8" />
+      <text x="1250" y="214" font-size="18" font-weight="800" letter-spacing="2.2" fill="#35507a">BASE</text>
+
+      <!-- relayer bar -->
+      <rect x="400" y="0" width="1260" height="100" rx="24" fill="#08402a" />
+      <text x="436" y="44" font-size="30" font-weight="800" fill="#f7f3ea" font-family="Bricolage Grotesque">Owo relayer</text>
+      <text x="436" y="80" font-size="20" fill="#cfe5d7">Submits the signed calls and pays the gas · checks the live rate against each order's naira floor</text>
+
+      <!-- wallet -->
+      <rect x="20" y="176" width="320" height="230" rx="24" fill="#fff" stroke="#e6dfcf" stroke-width="2"/>
+      <text x="48" y="222" font-size="28" font-weight="800" fill="#121a14" font-family="Bricolage Grotesque">Your wallet</text>
+      <text x="48" y="262" font-size="20" fill="#454c45">Signs, sends nothing:</text>
+      <text x="48" y="302" font-size="19" fill="#08402a" font-family="JetBrains Mono">WithdrawMUSD</text>
+      <text x="48" y="328" font-size="17" fill="#767b72">Mezo EIP-712, recipient = desk</text>
+      <text x="48" y="364" font-size="19" fill="#08402a" font-family="JetBrains Mono">CashOut intent</text>
+      <text x="48" y="390" font-size="17" fill="#767b72">Owo EIP-712, bank hash + floor</text>
+
+      <!-- treasury -->
+      <rect x="20" y="540" width="320" height="140" rx="24" fill="#fff" stroke="#e6dfcf" stroke-width="2"/>
+      <text x="48" y="586" font-size="28" font-weight="800" fill="#121a14" font-family="Bricolage Grotesque">Owo treasury</text>
+      <text x="48" y="624" font-size="19" fill="#454c45">Gets MUSD only after</text>
+      <text x="48" y="652" font-size="19" fill="#454c45">the naira is sent</text>
+
+      <!-- OwoDesk -->
+      <rect x="440" y="236" width="680" height="124" rx="22" fill="#fff" stroke="#0b6b43" stroke-width="3"/>
+      <text x="472" y="282" font-size="30" font-weight="800" fill="#121a14" font-family="Bricolage Grotesque">OwoDesk</text>
+      <text x="636" y="282" font-size="17" fill="#767b72" font-family="JetBrains Mono">0x6246…D8CD</text>
+      <text x="472" y="318" font-size="20" fill="#454c45">order #N:  Open → Taken → Paid</text>
+      <text x="472" y="344" font-size="17" fill="#767b72">cancel · reclaim · reject refund the user</text>
+
+      <!-- BOS -->
+      <rect x="440" y="414" width="330" height="116" rx="22" fill="#fff" stroke="#e6dfcf" stroke-width="2"/>
+      <text x="468" y="454" font-size="23" font-weight="800" fill="#121a14" font-family="Bricolage Grotesque">BorrowerOperations</text>
+      <text x="468" y="482" font-size="23" font-weight="800" fill="#121a14" font-family="Bricolage Grotesque">Signatures</text>
+      <text x="468" y="512" font-size="16" fill="#767b72" font-family="JetBrains Mono">withdrawMUSDWithSignature</text>
+
+      <!-- trove -->
+      <rect x="830" y="414" width="290" height="116" rx="22" fill="#fff" stroke="#e6dfcf" stroke-width="2"/>
+      <text x="858" y="458" font-size="25" font-weight="800" fill="#121a14" font-family="Bricolage Grotesque">Your trove</text>
+      <text x="858" y="490" font-size="18" fill="#454c45">BTC collateral stays put;</text>
+      <text x="858" y="514" font-size="18" fill="#454c45">MUSD debt is minted</text>
+
+      <!-- TroveManager -->
+      <rect x="440" y="580" width="680" height="90" rx="22" fill="#fcefd9" />
+      <text x="468" y="618" font-size="24" font-weight="800" fill="#121a14" font-family="Bricolage Grotesque">TroveManager redemption</text>
+      <text x="468" y="650" font-size="17" fill="#8a5508">MUSD → BTC at a flat 0.75% · hints from HintHelpers + SortedTroves</text>
+
+      <!-- Paycrest -->
+      <rect x="1250" y="236" width="380" height="164" rx="22" fill="#fff" stroke="#c9d5e8" stroke-width="2"/>
+      <text x="1278" y="280" font-size="27" font-weight="800" fill="#121a14" font-family="Bricolage Grotesque">Paycrest Gateway</text>
+      <text x="1278" y="316" font-size="18" fill="#454c45">USDC order at the live rate;</text>
+      <text x="1278" y="342" font-size="18" fill="#454c45">bank details RSA-encrypted</text>
+      <text x="1278" y="368" font-size="18" fill="#454c45">to Paycrest's key</text>
+
+      <!-- Bank -->
+      <rect x="1250" y="520" width="380" height="150" rx="22" fill="#08402a" />
+      <text x="1278" y="568" font-size="27" font-weight="800" fill="#f7f3ea" font-family="Bricolage Grotesque">Nigerian bank</text>
+      <text x="1278" y="606" font-size="19" fill="#cfe5d7">Any of 174 banks</text>
+      <text x="1278" y="636" font-size="19" fill="#cfe5d7">Naira lands here</text>
+
+      <!-- arrows -->
+      <g fill="none" stroke="#0b6b43" stroke-width="3">
+        <path d="M250 176 V50 H392" marker-end="url(#ah)"/>
+        <path d="M600 100 V228" marker-end="url(#ah)"/>
+        <path d="M605 360 V406" marker-end="url(#ah)"/>
+        <path d="M770 472 H822" marker-end="url(#ah)"/>
+        <path d="M975 414 V368" marker-end="url(#ah)"/>
+        <path d="M1440 100 V228" marker-end="url(#ah)"/>
+        <path d="M1440 400 V512" marker-end="url(#ah)"/>
+        <path d="M1040 100 V228" marker-end="url(#ah)"/>
+        <path d="M440 330 H380 V610 H348" marker-end="url(#ah)"/>
+      </g>
+      <path d="M340 652 H432" fill="none" stroke="#8a5508" stroke-width="3" stroke-dasharray="9 7" marker-end="url(#ahO)"/>
+
+      <!-- step badges -->
+      <g font-family="Bricolage Grotesque" font-weight="800" font-size="20" text-anchor="middle">
+        <circle cx="250" cy="130" r="18" fill="#e39a2d"/><text x="250" y="137" fill="#fff">1</text>
+        <circle cx="600" cy="140" r="18" fill="#e39a2d"/><text x="600" y="147" fill="#fff">2</text>
+        <circle cx="796" cy="446" r="16" fill="#e39a2d"/><text x="796" y="453" fill="#fff" font-size="18">3</text>
+        <circle cx="1440" cy="140" r="18" fill="#e39a2d"/><text x="1440" y="147" fill="#fff">4</text>
+        <circle cx="1040" cy="140" r="18" fill="#e39a2d"/><text x="1040" y="147" fill="#fff">5</text>
+        <circle cx="380" cy="470" r="18" fill="#e39a2d"/><text x="380" y="477" fill="#fff">6</text>
+      </g>
+      <g font-size="17" fill="#0b6b43" font-weight="700">
+        <text x="264" y="80">2 signatures</text>
+        <text x="628" y="136">borrowAndCashOut,</text>
+        <text x="628" y="158">then take</text>
+        <text x="990" y="396">MUSD → order #N</text>
+        <text x="1068" y="136">settle</text>
+        <text x="1068" y="158">→ Paid</text>
+        <text x="1468" y="136">createOrder</text>
+        <text x="1468" y="158">after take</text>
+        <text x="1458" y="462">naira</text>
+      </g>
+      <text x="350" y="640" font-size="15" font-weight="700" fill="#8a5508">redeem</text>
+    </svg>
+  </div>
+  <div class="foot"><span class="brand"><svg><use href="#cowrie"/></svg>owo</span><span class="mid">Dashed: treasury exit by redemption; automating it is on the roadmap</span><span class="num"></span></div>
+</section>
+
+<!-- 6 · Safety -->
+<section class="slide s-safety" data-title="Safety">
+  <div class="eyebrow">Safety</div>
+  <h2 class="title" style="font-size:72px;max-width:none">Your MUSD is released only <span class="g">after the naira is sent.</span></h2>
+  <div class="grid">
+    <div class="card sm">
+      <svg viewBox="0 0 980 520" width="980" height="520" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="sa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10z" fill="#0b6b43"/></marker>
+          <marker id="sr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10z" fill="#8a5508"/></marker>
+        </defs>
+        <text x="0" y="26" font-size="20" font-weight="800" letter-spacing="2" fill="#767b72">ORDER LIFECYCLE ON OWODESK</text>
+        <!-- happy path -->
+        <g font-family="Bricolage Grotesque" font-weight="800" text-anchor="middle">
+          <rect x="0" y="70" width="230" height="110" rx="24" fill="#fff" stroke="#0b6b43" stroke-width="3"/>
+          <text x="115" y="122" font-size="34" fill="#121a14">Open</text>
+          <rect x="370" y="70" width="230" height="110" rx="24" fill="#fff" stroke="#0b6b43" stroke-width="3"/>
+          <text x="485" y="122" font-size="34" fill="#121a14">Taken</text>
+          <rect x="740" y="70" width="230" height="110" rx="24" fill="#08402a"/>
+          <text x="855" y="122" font-size="34" fill="#f7f3ea">Paid</text>
+        </g>
+        <g font-family="Manrope" font-size="18" text-anchor="middle">
+          <text x="115" y="156" fill="#767b72">MUSD locked</text>
+          <text x="485" y="156" fill="#767b72">desk picked it up</text>
+          <text x="855" y="156" fill="#cfe5d7">MUSD → treasury</text>
+        </g>
+        <path d="M230 125 H362" stroke="#0b6b43" stroke-width="3" fill="none" marker-end="url(#sa)"/>
+        <path d="M600 125 H732" stroke="#0b6b43" stroke-width="3" fill="none" marker-end="url(#sa)"/>
+        <g font-family="Manrope" font-size="18" font-weight="700" fill="#0b6b43" text-anchor="middle">
+          <text x="296" y="110">take</text>
+          <text x="666" y="102">settle</text>
+          <text x="666" y="150" font-weight="600" fill="#767b72" font-size="16">after payout</text>
+        </g>
+        <!-- refunded -->
+        <rect x="0" y="400" width="970" height="110" rx="24" fill="#fcefd9"/>
+        <text x="485" y="448" text-anchor="middle" font-family="Bricolage Grotesque" font-weight="800" font-size="34" fill="#8a5508">Refunded: MUSD back to the user</text>
+        <text x="485" y="484" text-anchor="middle" font-family="Manrope" font-size="19" fill="#8a5508">enforced by the contract, works even while the desk is paused</text>
+        <!-- exits -->
+        <path d="M115 180 V392" stroke="#8a5508" stroke-width="3" stroke-dasharray="9 7" fill="none" marker-end="url(#sr)"/>
+        <path d="M430 180 V392" stroke="#8a5508" stroke-width="3" stroke-dasharray="9 7" fill="none" marker-end="url(#sr)"/>
+        <path d="M540 180 V392" stroke="#8a5508" stroke-width="3" stroke-dasharray="9 7" fill="none" marker-end="url(#sr)"/>
+        <g font-family="Manrope" font-size="20">
+          <text x="132" y="262" font-weight="800" fill="#121a14">Cancel</text>
+          <text x="132" y="290" fill="#454c45">by you, any time</text>
+          <text x="132" y="316" fill="#454c45">before pickup</text>
+          <text x="412" y="262" font-weight="800" fill="#121a14" text-anchor="end">Reject</text>
+          <text x="412" y="290" fill="#454c45" text-anchor="end">by the desk,</text>
+          <text x="412" y="316" fill="#454c45" text-anchor="end">auto refund</text>
+          <text x="558" y="262" font-weight="800" fill="#121a14">Reclaim</text>
+          <text x="558" y="290" fill="#454c45">by you, if the desk misses</text>
+          <text x="558" y="316" fill="#454c45">the settle window</text>
+        </g>
+      </svg>
+    </div>
+    <div class="side">
+      <div class="card box">
+        <h4>A signed intent can't be redirected</h4>
+        <p>The EIP-712 CashOut intent binds:</p>
+        <div class="fields"><span class="chip">owner</span><span class="chip">amount</span><span class="chip">naira floor</span><span class="chip">bank-details hash</span></div>
+        <p>A relayed signature can't pay someone else's account, or pay you less.</p>
+      </div>
+      <div class="card box">
+        <h4>Bank details stay off-chain</h4>
+        <p>Only a salted hash goes on Mezo. The details are RSA-encrypted to Paycrest's key.</p>
+      </div>
+      <div class="card box">
+        <h4>Limits and a pause switch</h4>
+        <p>Min and max order size, a daily cap, pause. Users can always exit, even while paused.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span class="brand"><svg><use href="#cowrie"/></svg>owo</span><span class="mid">contracts/src/OwoDesk.sol</span><span class="num"></span></div>
+</section>
+
+<!-- 7 · Mezo integration -->
+<section class="slide s-mezo" data-title="Mezo integration">
+  <div class="eyebrow">Mezo integration</div>
+  <h2 class="title" style="font-size:76px">Built on Mezo's own primitives, <span class="g">not a wrapper.</span></h2>
+  <div class="grid">
+    <div class="prim">
+      <div class="card p"><span class="fn">BorrowerOperationsSignatures<br/>.withdrawMUSDWithSignature</span><span class="what">The user signs <code>WithdrawMUSD</code> with the desk as recipient, so the loan and the cash-out happen in one relayed call.</span></div>
+      <div class="card p"><span class="fn">MUSD.permit  (EIP-2612)</span><span class="what">MUSD already in the wallet cashes out gaslessly through <code>cashOutWithPermit</code>.</span></div>
+      <div class="card p"><span class="fn">TroveManager · HintHelpers · SortedTroves</span><span class="what">The treasury exits MUSD by protocol redemption at <code>BorrowerOperations.redemptionRate</code> (0.75%), not the thin pools.</span></div>
+      <div class="card p"><span class="fn">PriceFeed · trove reads</span><span class="what">The borrow screen shows collateral, debt and the ratio before and after, priced by the Mezo oracle.</span></div>
+    </div>
+    <div class="gotchas">
+      <h3>Two things we found the hard way</h3>
+      <div class="gotcha">
+        <div class="h">withdrawMUSD to a contract</div>
+        <p><code>withdrawMUSD</code> always makes a native call to the recipient for the collateral change, which is 0 BTC when only MUSD is drawn. A contract recipient needs a <code>receive()</code>.</p>
+        <p>OwoDesk accepts zero-value calls and refuses real BTC.</p>
+      </div>
+      <div class="gotcha">
+        <div class="h">Redemption hints can overshoot</div>
+        <p><code>HintHelpers.getRedemptionHints</code> keeps walking past a skipped partial redemption, so its truncated amount can be more than TroveManager will take, and the call reverts.</p>
+        <p>Owo walks <code>SortedTroves</code> itself and sizes the batch to what will actually redeem.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span class="brand"><svg><use href="#cowrie"/></svg>owo</span><span class="mid">contracts/src/OwoDesk.sol · server/src/redeem.ts</span><span class="num"></span></div>
+</section>
+
+<!-- 8 · Proof -->
+<section class="slide s-proof" data-title="Proof">
+  <div class="eyebrow">Proof</div>
+  <h2 class="title" style="font-size:76px;max-width:none">Live on Mezo testnet, with <span class="g">real cash-outs.</span></h2>
+  <div class="grid">
+    <div><div class="shot"><img src="assets/live-order1.jpg" alt="Order 1"/></div><div class="shotcap">#1 · borrowed by signature</div></div>
+    <div><div class="shot"><img src="assets/live-order2.jpg" alt="Order 2"/></div><div class="shotcap">#2 · wallet MUSD by permit</div></div>
+    <div class="facts">
+      <div class="card fact"><div class="k">OwoDesk · Mezo testnet (31611)</div><div class="v mono">0x62465d6c87fA5551a379Ca12F135173ed8dAd8CD</div></div>
+      <div class="card fact"><div class="k">Settled orders</div><div class="v" style="display:flex;gap:40px;align-items:baseline"><span><span class="naira" style="font-size:40px;color:var(--green-deep)">₦68,597.78</span><br/><span class="src">#1 · 50 MUSD from a trove</span></span><span><span class="naira" style="font-size:40px;color:var(--green-deep)">₦164,610.81</span><br/><span class="src">#2 · 120 MUSD from the wallet</span></span></div></div>
+      <div class="card fact">
+        <div class="k">Tests</div>
+        <div class="tests">
+          <span class="n">28</span><span class="d">contract tests: 25 unit + fuzz, and 3 fork tests on a real Mezo trove, real MUSD, real signatures</span>
+          <span class="n">E2E</span><span class="d">contract + relayer + API on a Mezo testnet fork, both routes, end to end, then the treasury redeems its MUSD for BTC through TroveManager</span>
+        </div>
+      </div>
+      <div class="honest">On testnet the bank transfer is simulated (demo mode): test MUSD has no value. The Paycrest payout path is built and was rehearsed against Base mainnet's Gateway on a fork.</div>
+    </div>
+  </div>
+  <div class="foot"><span class="brand"><svg><use href="#cowrie"/></svg>owo</span><span class="mid">owo-production-f83c.up.railway.app/order/1 · /order/2</span><span class="num"></span></div>
+</section>
+
+<!-- 9 · Business -->
+<section class="slide s-biz" data-title="Business model">
+  <div class="eyebrow">Business model</div>
+  <h2 class="title" style="font-size:76px;max-width:none">A fee per cash-out, and a <span class="g">cheaper exit.</span></h2>
+  <div class="grid">
+    <div class="card big">
+      <div style="display:flex;align-items:flex-end;gap:36px">
+        <div class="n">1%</div>
+        <div style="padding-bottom:8px"><h3 style="margin:0">Owo fee per cash-out</h3><p style="margin-top:8px">Shown up front in the quote. It covers the desk's 0.75% redemption exit plus gas, leaving about 0.25% margin. The user still gets more naira than selling on Mezo's DEX.</p></div>
+      </div>
+      <div class="rule"></div>
+      <h4>Who it's for</h4>
+      <p>Nigerians who hold BTC and need naira for rent and bills, without selling the BTC. Mezo's kickoff Q&amp;A named borrow-to-bank-account as a Track 2 fit.</p>
+      <div class="rule"></div>
+      <h4>Corridors through Paycrest</h4>
+      <div class="ccy"><span class="chip green">NGN · now</span><span class="chip">GHS</span><span class="chip">KES</span><span class="chip">UGX</span><span class="chip">TZS</span></div>
+    </div>
+    <div class="card big exit">
+      <h3 style="margin-top:0">How the desk exits 1,000 MUSD</h3>
+      <div class="bars2">
+        <div class="b"><div class="lbl"><span>Protocol redemption</span><span class="v" style="color:var(--green)">$992.50 · −0.75%</span></div><div class="track"><div class="fill" style="width:16.7%;background:var(--green)"></div></div></div>
+        <div class="b"><div class="lbl"><span>DEX, MUSD → USDC</span><span class="v" style="color:var(--red)">$962 · −3.8%</span></div><div class="track"><div class="fill" style="width:84.4%;background:var(--red);opacity:.8"></div></div></div>
+        <div class="b"><div class="lbl"><span>DEX, MUSD → BTC</span><span class="v" style="color:var(--red)">$954.75 · −4.5%</span></div><div class="track"><div class="fill" style="width:100%;background:var(--red);opacity:.8"></div></div></div>
+      </div>
+      <p style="margin-top:30px">Redemption is a flat fee at any size, so the desk's exit cost doesn't grow with volume the way pool slippage does. It also takes collateral from the riskiest troves at $1, which helps hold the peg.</p>
+      <p class="src" style="margin-top:18px">Mezo mainnet, read on-chain Oct 24, 2026.</p>
+    </div>
+  </div>
+  <div class="foot"><span class="brand"><svg><use href="#cowrie"/></svg>owo</span><span class="mid">Mezo Buildathon · Wave 1</span><span class="num"></span></div>
+</section>
+
+<!-- 10 · Roadmap -->
+<section class="slide s-road" data-title="Roadmap">
+  <div class="eyebrow">Roadmap</div>
+  <h2 class="title">Next: <span class="g">real naira on mainnet.</span></h2>
+  <div class="lanes">
+    <div class="card lane done">
+      <div class="when">Wave 1 · shipped</div>
+      <h3>Testnet desk</h3>
+      <ul>
+        <li><b>OwoDesk</b> on Mezo testnet, three routes in</li>
+        <li><b>Relayer</b> with the Paycrest Gateway payout</li>
+        <li><b>The app</b>, live, with two settled orders</li>
+        <li><b>28 tests</b> plus a local end-to-end run</li>
+      </ul>
+    </div>
+    <div class="card lane next">
+      <div class="when">Wave 2 · Nov 2–15</div>
+      <h3>Mainnet, one click</h3>
+      <ul>
+        <li><b>Real naira on mainnet</b> with per-user limits</li>
+        <li><b>Open a trove in the same flow</b> via <span class="mono" style="font-size:21px">openTroveWithSignature</span></li>
+        <li><b>Mezo Passport</b> so Bitcoin wallets can sign</li>
+        <li><b>Automated float rebalancing</b>: MUSD → BTC by redemption → Base USDC</li>
+      </ul>
+    </div>
+    <div class="card lane">
+      <div class="when">Then</div>
+      <h3>More corridors</h3>
+      <ul>
+        <li><b>Ghana</b> (GHS)</li>
+        <li><b>Kenya</b> (KES)</li>
+        <li>Uganda and Tanzania, which Paycrest also supports</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span class="brand"><svg><use href="#cowrie"/></svg>owo</span><span class="mid">Mezo Buildathon · Wave 1</span><span class="num"></span></div>
+</section>
+
+<!-- 11 · Team -->
+<section class="slide s-team" data-title="Team">
+  <div class="eyebrow">Team</div>
+  <div class="row">
+    <div class="avatar"><svg><use href="#cowrie-light"/></svg></div>
+    <div class="who2">
+      <h2>neromtoobad</h2>
+      <div class="role">Solo builder</div>
+      <div class="built">
+        <div><b>Contract:</b> OwoDesk in Solidity, with Foundry unit, fuzz and Mezo fork tests</div>
+        <div><b>Relayer:</b> Node, viem and Hono; the Paycrest payout and the redemption exit</div>
+        <div><b>App:</b> Vite, React and viem; designed around the naira amount</div>
+      </div>
+      <div class="handles">
+        <span class="chip">X · @neromtoobad</span>
+        <span class="chip">GitHub · neromtoobad</span>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span class="brand"><svg><use href="#cowrie"/></svg>owo</span><span class="mid">Mezo Buildathon · Wave 1</span><span class="num"></span></div>
+</section>
+
+<!-- 12 · Close -->
+<section class="slide dark s-close" data-title="Close">
+  <div class="glow"></div>
+  <div class="center">
+    <div class="mark"><svg><use href="#cowrie-light"/></svg></div>
+    <h1>Owo. Your Bitcoin,<br/><span class="hl">in naira.</span></h1>
+    <div class="links">
+      <span class="k">Try it</span><span class="v">owo-production-f83c.up.railway.app</span>
+      <span class="k">Code</span><span class="v">github.com/neromtoobad/owo</span>
+      <span class="k">Desk</span><span class="v mono">0x62465d6c87fA5551a379Ca12F135173ed8dAd8CD</span>
+    </div>
+    <p class="try">No real bank details needed: pick "Owo Test Bank (testnet demo)" with any 10-digit number.</p>
+  </div>
+  <div class="foot"><span class="brand"><svg><use href="#cowrie-light"/></svg>owo</span><span class="mid">Mezo Buildathon · Wave 1 · Track 2</span><span class="num"></span></div>
+</section>
+
+</main>
+<div class="hud" id="hud"></div>
+
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var n = slides.length, i = 0, hud = document.getElementById('hud');
+  slides.forEach(function (s, k) {
+    var num = s.querySelector('.foot .num');
+    if (num) num.textContent = String(k + 1).padStart(2, '0') + ' / ' + String(n).padStart(2, '0');
+  });
+  function fit() {
+    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    document.documentElement.style.setProperty('--s', s);
+  }
+  function go(k) {
+    i = Math.max(0, Math.min(n - 1, k));
+    slides.forEach(function (s, j) { s.classList.toggle('on', j === i); });
+    hud.textContent = (i + 1) + ' / ' + n + '  ·  arrow keys';
+    if (location.hash !== '#' + (i + 1)) history.replaceState(null, '', '#' + (i + 1));
+  }
+  document.addEventListener('keydown', function (e) {
+    if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].indexOf(e.key) >= 0) { e.preventDefault(); go(i + 1); }
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].indexOf(e.key) >= 0) { e.preventDefault(); go(i - 1); }
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(n - 1);
+  });
+  document.addEventListener('click', function (e) { if (e.target.closest('a')) return; go(e.clientX > window.innerWidth / 2 ? i + 1 : i - 1); });
+  window.addEventListener('resize', fit);
+  window.addEventListener('hashchange', function () { go((parseInt(location.hash.slice(1), 10) || 1) - 1); });
+  fit(); go((parseInt(location.hash.slice(1), 10) || 1) - 1);
+  window.__deck = { go: go, count: n };
+})();
+</script>
+</body>
+</html>

@@ -75,7 +75,8 @@ export const config = {
   desk: (env('DESK') as Address | undefined) ?? deployment(),
   deskBlock: env('DESK') ? 0 : (deploymentFile().block ?? 0),
   relayerKey: env('RELAYER_KEY') as Hex | undefined,
-  feeBps: Number(env('FEE_BPS', '50')),
+  // Covers the treasury's 0.75% redemption exit and gas.
+  feeBps: Number(env('FEE_BPS', '100')),
   // The naira floor a user signs is the quote minus this cushion, so small rate moves don't refund.
   slippageBps: Number(env('SLIPPAGE_BPS', '100')),
   dataDir: env('DATA_DIR', join(root, 'data'))!,

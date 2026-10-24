@@ -19,7 +19,7 @@ Your MUSD is never released to Owo before your naira has been sent.
 ## Why it matters for Mezo
 - **A real exit for MUSD.** The kickoff Q&A said a borrow-and-cash-out to a bank account ("one click sending USD to my bank account") counts. Owo turns "borrow against BTC" into "pay rent in Lagos" without selling the BTC.
 - **Deep integration, not a wrapper.** Owo uses Mezo's own `BorrowerOperationsSignatures`: the user signs `WithdrawMUSD` with the desk as recipient, so the loan and the cash-out happen in one relayed call. The MUSD route uses MUSD's EIP-2612 permit.
-- **Built to be cheaper than the DEX.** The desk is designed to exit MUSD through protocol redemption (0.75% fee, `BorrowerOperations.redemptionRate`) rather than the thin pools, and the quote shows the DEX comparison live. The treasury redemption script itself is still on the roadmap below.
+- **Built to be cheaper than the DEX.** The desk is designed to exit MUSD through protocol redemption (0.75% fee, `BorrowerOperations.redemptionRate`) rather than the thin pools, and the quote shows the DEX comparison live. The treasury's redemption exit is built (`server/src/redeem.ts`) and runs in the end-to-end test.
 
 ## How it works
 ```
@@ -65,6 +65,6 @@ cd ../server && node scripts/e2e-local.ts                          # contract + 
 Found while building: `withdrawMUSD` always makes a native call to the recipient for the collateral change, which is 0 BTC when only MUSD is drawn. A contract recipient therefore needs a `receive()`. OwoDesk accepts zero-value calls and refuses real BTC.
 
 ## Roadmap
-1. Treasury exit by protocol redemption plus an automated float rebalance (MUSD → BTC → Base USDC).
+1. Automated float rebalancing (MUSD → BTC by redemption → Base USDC). The redemption exit itself is built: `server/scripts/redeem.ts`, run end to end in `e2e-local.ts`.
 2. Opening a new trove inside the same flow (`openTroveWithSignature`), and Mezo Passport so Bitcoin wallets can sign.
 3. Mainnet launch with per-user limits, then Ghana and Kenya (Paycrest supports GHS, KES, UGX and TZS).
