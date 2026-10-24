@@ -1,0 +1,10 @@
+.env
+*.env.local
+node_modules
+contracts/out
+contracts/cache
+data/
+dist/
+.DS_Store
+server/node_modules
+web/node_modules

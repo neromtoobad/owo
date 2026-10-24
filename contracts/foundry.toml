@@ -1,0 +1,18 @@
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+cache_path = "cache"
+solc_version = "0.8.24"
+# Mezo's EVM targets London: no PUSH0, no transient storage.
+evm_version = "london"
+optimizer = true
+optimizer_runs = 500
+
+[fuzz]
+runs = 512
+
+[rpc_endpoints]
+mezo_testnet = "https://rpc.test.mezo.org"
+mezo = "https://mezo.drpc.org"
