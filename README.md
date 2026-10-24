@@ -46,8 +46,13 @@ Your MUSD is never released to Owo before your naira has been sent.
   - serves the API and the app.
 - **`web/`** is the app (Vite + React + viem).
 
-## Status
-- **Mezo testnet** (chain 31611): OwoDesk at `TBD`.
+## Live
+- **App:** https://owo-production-f83c.up.railway.app (owo.nerom.site once its certificate issues)
+- **OwoDesk on Mezo testnet** (chain 31611): [`0x62465d6c87fA5551a379Ca12F135173ed8dAd8CD`](https://explorer.test.mezo.org/address/0x62465d6c87fA5551a379Ca12F135173ed8dAd8CD)
+- **First real testnet cash-outs:**
+  - [#1](https://owo-production-f83c.up.railway.app/order/1): 50 MUSD borrowed from a trove by signature → ₦68,597.78
+  - [#2](https://owo-production-f83c.up.railway.app/order/2): 120 MUSD from the wallet by permit → ₦164,610.81
+- **Try it without real bank details:** pick "Owo Test Bank (testnet demo)" with any 10-digit number.
 - **Payouts:** in demo mode on testnet, the payout step is simulated and labelled as such, because test MUSD has no value. Live mode pays real naira through Paycrest. On testnet it's limited to an allow-list (the operator's own wallet), and on mainnet it's open to everyone.
 
 ## Tests
