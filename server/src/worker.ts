@@ -10,6 +10,7 @@ import * as paycrest from './paycrest.ts';
 const POLL_MS = 4_000;
 const MAX_RANGE = 2_000n;
 const busy = new Set<number>();
+const ROUTES = ['wallet', 'permit', 'borrow'] as const;
 
 export function quoteNaira(musd: number, rate: number) {
   const feeMusd = (musd * config.feeBps) / 10_000;
@@ -153,10 +154,16 @@ export async function scan() {
     const to = from + MAX_RANGE > head ? head : from + MAX_RANGE;
     const raw = await pub.getLogs({ address: desk(), fromBlock: from, toBlock: to });
     const logs = parseEventLogs({ abi: deskAbi, logs: raw, eventName: 'Opened' }) as unknown as {
-      args: { id: bigint; owner: string };
+      args: { id: bigint; owner: string; route: number };
       transactionHash: Hex;
     }[];
-    for (const l of logs) meta(Number(l.args.id), l.args.owner);
+    for (const l of logs) {
+      const m = meta(Number(l.args.id), l.args.owner);
+      if (!m.route) {
+        m.route = ROUTES[Number(l.args.route)];
+        store.putOrder(m);
+      }
+    }
     noteOpen(logs);
     store.cursor = Number(to);
     from = to + 1n;
@@ -165,6 +172,24 @@ export async function scan() {
   for (const m of store.orders()) {
     const last = m.steps.find((s) => s.key === 'settled')!;
     if (!last.done && !m.closed) void work(m.id);
+  }
+}
+
+/** Orders opened before routes were recorded: read the route from the Opened logs. */
+async function backfillRoutes() {
+  const missing = store.orders().filter((m) => !m.route);
+  if (!missing.length || !config.deskBlock) return;
+  const head = await pub.getBlockNumber();
+  for (let from = BigInt(config.deskBlock); from <= head; from += MAX_RANGE + 1n) {
+    const to = from + MAX_RANGE > head ? head : from + MAX_RANGE;
+    const raw = await pub.getLogs({ address: desk(), fromBlock: from, toBlock: to });
+    for (const l of parseEventLogs({ abi: deskAbi, logs: raw, eventName: 'Opened' }) as unknown as { args: { id: bigint; route: number } }[]) {
+      const m = store.order(Number(l.args.id));
+      if (m && !m.route) {
+        m.route = ROUTES[Number(l.args.route)];
+        store.putOrder(m);
+      }
+    }
   }
 }
 
@@ -182,13 +207,15 @@ export function startWorker() {
     setTimeout(loop, POLL_MS);
   };
   void loop();
+  backfillRoutes().catch((e) => console.error('backfill:', (e as Error).message));
   console.log(`worker: watching ${config.desk} on ${config.chainName}`);
 }
 
 /** Called right after the relayer submits an order, so it doesn't wait for the next scan. */
-export function kick(id: number, openTx: string, owner: string) {
+export function kick(id: number, openTx: string, owner: string, route?: 'wallet' | 'permit' | 'borrow') {
   const m = meta(id, owner);
   m.openTx = openTx;
+  if (route) m.route = route;
   store.putOrder(m);
   void work(id);
 }

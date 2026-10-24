@@ -184,7 +184,7 @@ async function relay(c: { req: { header(k: string): string | undefined } }, inte
   if (receipt.status !== 'success') throw new Error(`Transaction reverted (${hash})`);
   const [ev] = parseEventLogs({ abi: deskAbi, logs: receipt.logs, eventName: 'Opened' }) as unknown as { args: { id: bigint } }[];
   const orderId = Number(ev.args.id);
-  kick(orderId, hash, intent.owner);
+  kick(orderId, hash, intent.owner, functionName === 'borrowAndCashOut' ? 'borrow' : 'permit');
   return { txHash: hash, orderId };
 }
 
@@ -236,8 +236,8 @@ async function orderView(id: number) {
   if (o.status === 'none') return null;
   const m = store.order(id);
   const rec = store.recipient(o.recipientHash);
-  let route: string = 'wallet';
-  if (m?.openTx) {
+  let route: string = m?.route ?? 'wallet';
+  if (!m?.route && m?.openTx) {
     try {
       const receipt = await pub.getTransactionReceipt({ hash: m.openTx as Hex });
       const [ev] = parseEventLogs({ abi: deskAbi, logs: receipt.logs, eventName: 'Opened' }) as unknown as { args: { route: number } }[];
@@ -260,7 +260,7 @@ async function orderView(id: number) {
     takeTx: m?.takeTx ?? null,
     settleTx: m?.settleTx ?? null,
     refundTx: m?.refundTx ?? null,
-    error: m?.error ?? null,
+    error: o.status === 'paid' ? null : (m?.error ?? null),
     bank: rec ? { name: rec.bankName, last4: rec.accountIdentifier.slice(-4), accountName: rec.accountName } : null,
     payout: {
       mode: m?.mode ?? 'demo',

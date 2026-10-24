@@ -29,6 +29,7 @@ export type OrderMeta = {
   paycrestStatus?: string;
   error?: string;
   closed?: 'paid' | 'refunded';
+  route?: 'wallet' | 'permit' | 'borrow';
   steps: Step[];
   updatedAt: number;
 };

@@ -50,11 +50,11 @@ const NETS = {
 const net = (env('MEZO_NET', 'testnet') as Net);
 const n = NETS[net];
 
-function deployment(): Address | undefined {
+function deploymentFile(): { desk?: Address; block?: number } {
   const f = join(root, 'deployments', `${net}.json`);
-  if (!existsSync(f)) return undefined;
-  return JSON.parse(readFileSync(f, 'utf8')).desk as Address;
+  return existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : {};
 }
+const deployment = () => deploymentFile().desk;
 
 export const config = {
   root,
@@ -73,6 +73,7 @@ export const config = {
   // Holds the MUSD the desk settles and redeems it for BTC. Defaults to the relayer key.
   treasuryKey: (env('TREASURY_KEY') ?? env('RELAYER_KEY')) as Hex | undefined,
   desk: (env('DESK') as Address | undefined) ?? deployment(),
+  deskBlock: env('DESK') ? 0 : (deploymentFile().block ?? 0),
   relayerKey: env('RELAYER_KEY') as Hex | undefined,
   feeBps: Number(env('FEE_BPS', '50')),
   // The naira floor a user signs is the quote minus this cushion, so small rate moves don't refund.
