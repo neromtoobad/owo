@@ -63,6 +63,10 @@ async function work(id: number) {
       if (BigInt(Math.floor(q.naira * 100)) < o.minNaira) {
         return await refund(m, `Rate moved: ₦${q.naira.toLocaleString()} is below your floor`);
       }
+      if (m.mode === 'live' && rec.institution === paycrest.TEST_BANK.code) {
+        Object.assign(m, { mode: 'demo', steps: freshSteps('demo') });
+        step(m, 'locked');
+      }
       if (m.mode === 'live' && (await paycrest.floatBalance()) < q.usdc) {
         return await refund(m, 'Payout float is low right now');
       }

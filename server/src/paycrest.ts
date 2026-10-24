@@ -28,13 +28,19 @@ async function get<T>(path: string): Promise<T> {
 
 export type Bank = { name: string; code: string; type?: string };
 
+/** Testnet only: a bank that needs no real account details, so anyone can try the flow. */
+export const TEST_BANK: Bank = { name: 'Owo Test Bank (testnet demo)', code: 'OWOTESTX', type: 'bank' };
+const testBankOn = () => config.net === 'testnet';
+
 let banksCache: { at: number; banks: Bank[] } | undefined;
 export async function banks(): Promise<Bank[]> {
-  if (banksCache && Date.now() - banksCache.at < 6 * 3600_000) return banksCache.banks;
+  if (banksCache && Date.now() - banksCache.at < 6 * 3600_000) {
+    return testBankOn() ? [TEST_BANK, ...banksCache.banks] : banksCache.banks;
+  }
   const list = await get<Bank[]>('/v1/institutions/NGN');
   const banks = list.filter((b) => !b.type || b.type === 'bank').sort((a, b) => a.name.localeCompare(b.name));
   banksCache = { at: Date.now(), banks };
-  return banks;
+  return testBankOn() ? [TEST_BANK, ...banks] : banks;
 }
 
 const rateCache = new Map<string, { at: number; rate: number }>();
@@ -53,6 +59,10 @@ export async function rate(usdc: number): Promise<number> {
 export async function verifyAccount(institution: string, accountIdentifier: string): Promise<string> {
   // Local end-to-end tests only: never look up real people's accounts from a test run.
   if (process.env.OWO_FAKE_VERIFY === '1' && config.rpc.includes('127.0.0.1')) return 'TEST ACCOUNT HOLDER';
+  if (institution === TEST_BANK.code) {
+    if (!testBankOn()) throw new Error('Unknown bank');
+    return 'ADA OKAFOR (TEST ACCOUNT)';
+  }
   const r = await fetch(`${API}/v1/verify-account`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
