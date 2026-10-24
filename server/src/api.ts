@@ -40,6 +40,8 @@ app.get('/api/health', async (c) => {
     relayerBtc: formatUnits(bal, 18),
     live: config.live,
     paycrestKey: Boolean(config.paycrestKey),
+    liveOwners: config.liveOwners.length,
+    float: await paycrest.floatStatus().catch(() => null),
   });
 });
 
@@ -65,7 +67,8 @@ app.get('/api/config', async (c) => {
     maxOrder: p ? formatUnits(p.maxOrder, 18) : '2000',
     dayRoom: p ? formatUnits(p.dayRoom, 18) : '0',
     settleWindowSec: p ? Number(p.settleWindow) : 21600,
-    mode: config.live ? 'live' : 'demo',
+    // On testnet only allow-listed wallets get live payouts, so the app stays in demo mode.
+    mode: config.live && config.net === 'mainnet' ? 'live' : 'demo',
     liveOwners: config.net === 'testnet' ? config.liveOwners : [],
     paycrestRate,
   });

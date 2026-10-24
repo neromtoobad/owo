@@ -116,6 +116,14 @@ export function baseClients() {
   return { account, pub, wallet };
 }
 
+/** The Base wallet that pays Paycrest: address, USDC and ETH for gas. */
+export async function floatStatus() {
+  if (!process.env.BASE_KEY) return null;
+  const { account, pub } = baseClients();
+  const [usdc, eth] = await Promise.all([floatBalance(), pub.getBalance({ address: account.address })]);
+  return { address: account.address, usdc, eth: Number(eth) / 1e18 };
+}
+
 export async function floatBalance(): Promise<number> {
   const { account, pub } = baseClients();
   const bal = await pub.readContract({ address: config.baseUsdc, abi: erc20Abi, functionName: 'balanceOf', args: [account.address] });

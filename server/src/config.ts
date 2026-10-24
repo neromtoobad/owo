@@ -96,7 +96,7 @@ export const config = {
   paycrestKey: env('PAYCREST_API_KEY'),
   baseRpc: env('BASE_RPC', 'https://mainnet.base.org')!,
   baseKey: (env('BASE_KEY') ?? env('RELAYER_KEY')) as Hex | undefined,
-  baseGateway: '0x883D0cD57CaA8a085a8a86dF6C4B3F10888387A1' as Address,
+  baseGateway: '0x30F6A8457F8E42371E204a9c103f2Bd42341dD0F' as Address,
   baseUsdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as Address,
 };
 
