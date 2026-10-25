@@ -65,6 +65,7 @@ The signed intent binds the owner, amount, naira floor and a salted hash of the 
 - **Real testnet cash-outs settled on-chain:**
   - [Order #1](https://owo.nerom.site/order/1): borrow route, 50 MUSD to ₦68,597.78.
   - [Order #2](https://owo.nerom.site/order/2): wallet route, 120 MUSD to ₦164,610.81.
+  - [Order #3](https://owo.nerom.site/order/3): borrow route, 30 MUSD to ₦40,743.94 (filmed for the pitch video).
 - **Payouts:** on testnet the bank transfer is simulated and labelled as such, because test MUSD has no value. The live Paycrest payout path is built and was rehearsed against Paycrest's Base mainnet Gateway on a fork.
 - **Try it without real bank details:** choose "Owo Test Bank (testnet demo)" with any 10-digit number. To get test MUSD, open a trove at testnet.mezo.org; for test BTC use faucet.test.mezo.org.
 
