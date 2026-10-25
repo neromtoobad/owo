@@ -111,3 +111,45 @@ Owo turns "borrow against BTC" into "pay rent in Lagos" in one flow. It also giv
 **Connect:**
 - **X:** https://x.com/neromtoobad
 - **Discord, Telegram, Email:** add your own if you want Mezo to reach you there. They contact winners by the email you registered with.
+
+---
+
+# Submit step (the "Updates in this Wave" and "Milestone" boxes)
+
+**Updates in this Wave:**
+
+Wave 1 is Owo's first submission. Everything was built from scratch during this wave.
+
+What shipped (live on Mezo testnet):
+- OwoDesk contract on Mezo testnet (0x62465d6c87fA5551a379Ca12F135173ed8dAd8CD). It has three ways in:
+  - borrowAndCashOut: borrows from your trove by signature via Mezo's BorrowerOperationsSignatures.
+  - cashOutWithPermit: gasless, using an MUSD permit.
+  - cashOut: a normal wallet transaction.
+- Refund guarantees: cancel before pickup, reclaim after the settle window, automatic refund if the rate drops below your floor.
+- An EIP-712 CashOut intent that binds the owner, amount, naira floor and the hash of your bank details.
+- Relayer: pays users' gas, checks Paycrest's live NGN rate, pays out through Paycrest's Gateway on Base, then settles on Mezo.
+- Treasury exit: redeems MUSD for BTC through Mezo's TroveManager (0.75%) instead of thin DEX pools. The planner handles a redemption edge case we found in HintHelpers.
+- Web app (mobile-first): 174 Nigerian banks, account-name check, two signatures, no BTC for gas, a live order tracker.
+- Tests: 25 unit and fuzz tests, 3 fork tests on real Mezo testnet troves, and an end-to-end run on a Mezo fork (both routes, a replay attack refused, treasury redemption).
+- 3 real cash-outs settled on Mezo testnet: https://owo.nerom.site/order/1 (borrow, 50 MUSD → ₦68,597.78), /order/2 (wallet, 120 MUSD → ₦164,610.81), /order/3 (borrow, 30 MUSD → ₦40,743.94). On testnet the bank transfer is simulated and labelled as such. The live Paycrest payout was rehearsed against Base mainnet's Gateway on a fork.
+
+Links:
+- Live: https://owo.nerom.site (try it with "Owo Test Bank (testnet demo)", no real bank details needed)
+- Code: https://github.com/neromtoobad/owo
+- Video: https://youtu.be/76sDNTn-alk
+- Deck: https://owo.nerom.site/owo-deck.pdf
+
+**Milestone · 2nd Wave:**
+
+Real naira on mainnet, by Nov 15:
+- Paycrest sender verification and real NGN bank payouts, with live mode on Mezo mainnet and per-user limits.
+- Open a new trove inside the same flow, via openTroveWithSignature, so a first-time user goes from BTC to naira in one session.
+- Mezo Passport, so Bitcoin wallets (Unisat, OKX, Xverse) can sign.
+- First real users from the Mezo Discord and Nigerian BTC holders, with cash-outs published on a public status page.
+
+**Milestone · 3rd Wave:**
+
+Scale the rail, December to Q1 2027:
+- Automated float management: the treasury batches MUSD into protocol redemptions and rebalances into Base USDC, with public reserves.
+- New corridors on the same Paycrest rail: Ghana (GHS) and Kenya (KES), then Uganda and Tanzania.
+- A WhatsApp/Telegram front end for cash-outs and loan-health alerts.
