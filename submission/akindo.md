@@ -79,7 +79,7 @@ The signed intent binds the owner, amount, naira floor and a salted hash of the 
 - **Live:** https://owo.nerom.site
 - **GitHub:** https://github.com/neromtoobad/owo
 - **Deck:** https://owo.nerom.site/owo-deck.pdf
-- **Video:** (YouTube link once uploaded)
+- **Video:** https://youtu.be/76sDNTn-alk
 
 **Updates in this Wave** (form field): First submission, built from scratch in Wave 1. It includes:
 - OwoDesk contract (3 routes, refund guarantees, signed intents) with 28 tests;

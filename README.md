@@ -48,6 +48,8 @@ Your MUSD is never released to Owo before your naira has been sent.
 
 ## Live
 - **App:** https://owo.nerom.site (also https://owo-production-f83c.up.railway.app)
+- **2-minute pitch:** https://youtu.be/76sDNTn-alk
+- **Deck:** https://owo.nerom.site/owo-deck.pdf
 - **OwoDesk on Mezo testnet** (chain 31611): [`0x62465d6c87fA5551a379Ca12F135173ed8dAd8CD`](https://explorer.test.mezo.org/address/0x62465d6c87fA5551a379Ca12F135173ed8dAd8CD)
 - **First real testnet cash-outs:**
   - [#1](https://owo.nerom.site/order/1): 50 MUSD borrowed from a trove by signature → ₦68,597.78
