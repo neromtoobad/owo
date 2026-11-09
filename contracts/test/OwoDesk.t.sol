@@ -72,6 +72,22 @@ contract OwoDeskTest is Base {
         return vm.sign(key, digest);
     }
 
+    /// The owner's Mezo WithdrawMUSD signature, desk as recipient, at their current nonce.
+    function _borrowSig(uint256 key, uint256 amount, uint256 deadline) internal view returns (bytes memory) {
+        address borrower = vm.addr(key);
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                bops.domainSeparator(),
+                keccak256(
+                    abi.encode(bops.WITHDRAW_MUSD_TYPEHASH(), amount, borrower, address(desk), bops.getNonce(borrower), deadline)
+                )
+            )
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(key, digest);
+        return abi.encodePacked(r, s, v);
+    }
+
     function _walletOrder(uint256 amount, uint256 minNaira) internal returns (uint256 id) {
         vm.startPrank(user);
         musd.approve(address(desk), amount);
@@ -135,10 +151,15 @@ contract OwoDeskTest is Base {
         bytes memory sig = _signIntent(userKey, it);
         uint256 userBefore = musd.balanceOf(user);
 
+        uint256 dl = block.timestamp + 1 hours;
+        bytes memory bsig = _borrowSig(userKey, 400e18, dl);
+
         vm.prank(relayer);
-        uint256 id = desk.borrowAndCashOut(it, sig, address(0), address(0), new bytes(65), block.timestamp + 1 hours);
+        uint256 id = desk.borrowAndCashOut(it, sig, address(0), address(0), bsig, dl);
 
         assertEq(bops.lastBorrower(), user, "borrower");
+        assertEq(desk.lockedMusd(), 400e18, "locked");
+        assertEq(desk.unassigned(), 0, "nothing unassigned");
         assertEq(musd.balanceOf(address(desk)), 400e18, "minted into desk");
         assertEq(musd.balanceOf(user), userBefore, "wallet untouched");
         assertEq(desk.getOrder(id).owner, user, "owner");
@@ -171,14 +192,14 @@ contract OwoDeskTest is Base {
         bytes memory sig = _signIntent(userKey, it);
         it.minNaira = 1;
         vm.expectRevert(OwoDesk.BadSignature.selector);
-        desk.borrowAndCashOut(it, sig, address(0), address(0), new bytes(65), block.timestamp + 1 hours);
+        desk.borrowAndCashOut(it, sig, address(0), address(0), new bytes(65), block.timestamp + 1 hours); // fails on the intent first
     }
 
     function test_intent_wrongSigner() public {
         OwoDesk.Intent memory it = _intent(user, 50e18, 60_000_00, BANK);
         bytes memory sig = _signIntent(otherKey, it);
         vm.expectRevert(OwoDesk.BadSignature.selector);
-        desk.borrowAndCashOut(it, sig, address(0), address(0), new bytes(65), block.timestamp + 1 hours);
+        desk.borrowAndCashOut(it, sig, address(0), address(0), new bytes(65), block.timestamp + 1 hours); // fails on the intent first
     }
 
     function test_intent_expired() public {
@@ -186,7 +207,7 @@ contract OwoDeskTest is Base {
         bytes memory sig = _signIntent(userKey, it);
         vm.warp(it.deadline + 1);
         vm.expectRevert(OwoDesk.Expired.selector);
-        desk.borrowAndCashOut(it, sig, address(0), address(0), new bytes(65), block.timestamp + 1 hours);
+        desk.borrowAndCashOut(it, sig, address(0), address(0), new bytes(65), block.timestamp + 1 hours); // fails on the intent first
     }
 
     function test_intent_highSRejected() public {
@@ -202,8 +223,100 @@ contract OwoDeskTest is Base {
         bops.setMintBps(9_990);
         OwoDesk.Intent memory it = _intent(user, 100e18, 60_000_00, BANK);
         bytes memory sig = _signIntent(userKey, it);
+        uint256 dl = block.timestamp + 1 hours;
+        bytes memory bsig = _borrowSig(userKey, 100e18, dl);
         vm.expectRevert(OwoDesk.MintMismatch.selector);
-        desk.borrowAndCashOut(it, sig, address(0), address(0), new bytes(65), block.timestamp + 1 hours);
+        desk.borrowAndCashOut(it, sig, address(0), address(0), bsig, dl);
+    }
+
+    // ------------------------------------------------------------ borrow front-running (Wave 1 review)
+
+    /// Someone copies the borrow signature from a pending relay and submits it to Mezo
+    /// first. The MUSD lands in the desk with no order; the relay must still open it.
+    function test_borrowFrontRun_orderStillOpens() public {
+        uint256 dl = block.timestamp + 1 hours;
+        OwoDesk.Intent memory it = _intent(user, 300e18, 400_000_00, BANK);
+        bytes memory sig = _signIntent(userKey, it);
+        bytes memory bsig = _borrowSig(userKey, 300e18, dl);
+
+        vm.prank(other); // the front-runner
+        bops.withdrawMUSDWithSignature(300e18, address(0), address(0), user, address(desk), bsig, dl);
+        assertEq(desk.unassigned(), 300e18, "stranded before the fix");
+
+        vm.prank(relayer);
+        uint256 id = desk.borrowAndCashOut(it, sig, address(0), address(0), bsig, dl);
+        OwoDesk.Order memory o = desk.getOrder(id);
+        assertEq(o.owner, user, "owner");
+        assertEq(o.amount, 300e18, "amount");
+        assertEq(desk.unassigned(), 0, "MUSD assigned to the order");
+        assertEq(desk.lockedMusd(), 300e18, "locked");
+
+        // And the owner can still exit.
+        vm.prank(user);
+        desk.cancel(id);
+        assertEq(musd.balanceOf(user), 5_300e18, "borrowed MUSD back to the owner");
+    }
+
+    /// The same consumed borrow signature can open at most one order.
+    function test_borrowFrontRun_cannotCreditTwice() public {
+        uint256 dl = block.timestamp + 1 hours;
+        bytes memory bsig = _borrowSig(userKey, 100e18, dl);
+        OwoDesk.Intent memory it = _intent(user, 100e18, 1, BANK);
+        bytes memory sig = _signIntent(userKey, it);
+        vm.prank(relayer);
+        desk.borrowAndCashOut(it, sig, address(0), address(0), bsig, dl);
+
+        // Someone donates 100 MUSD, then replays the same borrow signature with a fresh intent.
+        vm.prank(other);
+        musd.transfer(address(desk), 100e18);
+        OwoDesk.Intent memory it2 = _intent(user, 100e18, 1, BANK);
+        bytes memory sig2 = _signIntent(userKey, it2);
+        vm.expectRevert(OwoDesk.BorrowAlreadyUsed.selector);
+        desk.borrowAndCashOut(it2, sig2, address(0), address(0), bsig, dl);
+    }
+
+    /// A consumed signature can't claim MUSD the desk doesn't hold unassigned.
+    function test_borrowFrontRun_needsUnassignedMUSD() public {
+        uint256 dl = block.timestamp + 1 hours;
+        bytes memory bsig = _borrowSig(userKey, 100e18, dl);
+        vm.prank(other);
+        bops.withdrawMUSDWithSignature(100e18, address(0), address(0), user, address(desk), bsig, dl);
+        vm.prank(admin);
+        desk.returnUnassigned(user, 100e18); // already handed back
+
+        OwoDesk.Intent memory it = _intent(user, 100e18, 1, BANK);
+        bytes memory sig = _signIntent(userKey, it);
+        vm.expectRevert(OwoDesk.MintMismatch.selector);
+        desk.borrowAndCashOut(it, sig, address(0), address(0), bsig, dl);
+    }
+
+    /// A bad borrow signature still fails with Mezo's own reason, not a generic one.
+    function test_borrow_badSigBubblesMezoReason() public {
+        uint256 dl = block.timestamp + 1 hours;
+        OwoDesk.Intent memory it = _intent(user, 100e18, 1, BANK);
+        bytes memory sig = _signIntent(userKey, it);
+        bytes memory wrong = _borrowSig(otherKey, 100e18, dl);
+        vm.expectRevert(bytes("BorrowerOperationsSignatures: Invalid signature"));
+        desk.borrowAndCashOut(it, sig, address(0), address(0), wrong, dl);
+    }
+
+    function test_returnUnassigned_neverTouchesOrders() public {
+        _walletOrder(200e18, 1);
+        vm.prank(other);
+        musd.transfer(address(desk), 50e18); // sent by mistake
+        assertEq(desk.unassigned(), 50e18, "unassigned");
+
+        vm.prank(user);
+        vm.expectRevert(OwoDesk.NotAdmin.selector);
+        desk.returnUnassigned(user, 50e18);
+
+        vm.startPrank(admin);
+        vm.expectRevert(OwoDesk.BadAmount.selector);
+        desk.returnUnassigned(other, 51e18);
+        desk.returnUnassigned(other, 50e18);
+        vm.stopPrank();
+        assertEq(musd.balanceOf(address(desk)), 200e18, "order MUSD untouched");
+        assertEq(musd.balanceOf(other), 5_000e18, "returned");
     }
 
     // ------------------------------------------------------------ refunds
@@ -429,6 +542,7 @@ contract OwoDeskTest is Base {
                 if (o.status == OwoDesk.Status.Open || o.status == OwoDesk.Status.Taken) live += o.amount;
             }
             assertEq(musd.balanceOf(address(desk)), live, "desk == live orders");
+            assertEq(desk.lockedMusd(), live, "lockedMusd == live orders");
             assertEq(musd.balanceOf(treasury), paidOut, "treasury == paid");
             assertEq(musd.balanceOf(user) + musd.balanceOf(other) + live + paidOut, 10_000e18, "conservation");
         }

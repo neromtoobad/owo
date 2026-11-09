@@ -91,6 +91,8 @@ export const config = {
 
   // Payouts. "demo" simulates the bank transfer; "live" pays through Paycrest on Base.
   live: env('LIVE') === '1',
+  // Per-wallet cap on MUSD cashed out in a rolling 24h (on top of the desk's own limits).
+  userDayCap: Number(env('USER_DAY_CAP', '500')),
   // On testnet, live payouts only for these owners (the operator's own wallet), never for strangers' test MUSD.
   liveOwners: (env('LIVE_OWNERS', '') ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean),
   paycrestApi: 'https://api.paycrest.io',

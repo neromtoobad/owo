@@ -74,12 +74,17 @@ contract MockMUSD {
     }
 }
 
-/// @dev Stands in for BorrowerOperationsSignatures: mints the borrowed MUSD to the recipient.
-/// The real signature check is covered by the fork test.
+/// @dev Stands in for BorrowerOperationsSignatures: checks the owner's WithdrawMUSD
+/// signature exactly like Mezo's (same typed data, per-borrower nonce, anyone may submit)
+/// and mints the borrowed MUSD to the recipient.
 contract MockBorrowerOps {
     MockMUSD public immutable musd;
     uint256 public mintBps = 10_000;
     address public lastBorrower;
+    mapping(address => uint256) public getNonce;
+
+    bytes32 public constant WITHDRAW_MUSD_TYPEHASH =
+        keccak256("WithdrawMUSD(uint256 amount,address borrower,address recipient,uint256 nonce,uint256 deadline)");
 
     constructor(MockMUSD _musd) {
         musd = _musd;
@@ -87,6 +92,18 @@ contract MockBorrowerOps {
 
     function setMintBps(uint256 bps) external {
         mintBps = bps;
+    }
+
+    function domainSeparator() public view returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256("BorrowerOperationsSignatures"),
+                keccak256("1"),
+                block.chainid,
+                address(this)
+            )
+        );
     }
 
     function withdrawMUSDWithSignature(
@@ -98,8 +115,25 @@ contract MockBorrowerOps {
         bytes memory signature,
         uint256 deadline
     ) external {
-        require(signature.length == 65, "sig");
-        require(block.timestamp <= deadline, "Signature expired");
+        require(block.timestamp <= deadline, "BorrowerOperationsSignatures: Signature expired");
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                domainSeparator(),
+                keccak256(abi.encode(WITHDRAW_MUSD_TYPEHASH, amount, borrower, recipient, getNonce[borrower], deadline))
+            )
+        );
+        require(signature.length == 65, "BorrowerOperationsSignatures: Invalid signature");
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        assembly {
+            r := mload(add(signature, 32))
+            s := mload(add(signature, 64))
+            v := byte(0, mload(add(signature, 96)))
+        }
+        require(ecrecover(digest, v, r, s) == borrower, "BorrowerOperationsSignatures: Invalid signature");
+        getNonce[borrower]++;
         lastBorrower = borrower;
         musd.mint(recipient, amount * mintBps / 10_000);
     }

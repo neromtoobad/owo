@@ -35,6 +35,15 @@ async function refund(m: OrderMeta, why: string) {
   console.log(`order ${m.id}: refunded (${why})`);
 }
 
+/** MUSD this wallet cashed out (or has in flight) in the last 24h, excluding one order. */
+export function usedToday(owner: string, except = 0) {
+  const since = Date.now() - 24 * 3600_000;
+  return store
+    .orders()
+    .filter((m) => m.id !== except && m.owner === owner.toLowerCase() && (m.openedAt ?? 0) >= since && m.closed !== 'refunded' && !m.refundTx)
+    .reduce((t, m) => t + (m.musd ?? 0), 0);
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function work(id: number) {
@@ -52,8 +61,20 @@ async function work(id: number) {
 
     const rec = store.recipient(o.recipientHash);
     const musd = Number(formatUnits(o.amount, 18));
+    if (m.owner === undefined) {
+      Object.assign(m, { owner: o.owner.toLowerCase(), musd, openedAt: o.openedAt * 1000 });
+      store.putOrder(m);
+    }
 
     if (o.status === 'open') {
+      // Mainnet never simulates: without live payouts switched on, the MUSD goes back.
+      if (config.net === 'mainnet' && m.mode !== 'live') {
+        return await refund(m, 'Live payouts are paused right now. Your MUSD is on its way back.');
+      }
+      const used = usedToday(o.owner, id);
+      if (used + musd > config.userDayCap) {
+        return await refund(m, `Over the ${config.userDayCap} MUSD per wallet per day limit (${used.toFixed(2)} used)`);
+      }
       if (!rec) {
         // The app registers bank details before signing; give a slow client a minute.
         if (Date.now() / 1000 - o.openedAt < 60) return;
@@ -65,6 +86,7 @@ async function work(id: number) {
         return await refund(m, `Rate moved: ₦${q.naira.toLocaleString()} is below your floor`);
       }
       if (m.mode === 'live' && rec.institution === paycrest.TEST_BANK.code) {
+        if (config.net === 'mainnet') return await refund(m, 'The test bank only works on testnet');
         Object.assign(m, { mode: 'demo', steps: freshSteps('demo') });
         step(m, 'locked');
       }

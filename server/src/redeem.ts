@@ -14,6 +14,16 @@ const GAS_COMPENSATION = 200n * 10n ** 18n;
 const ZERO = '0x0000000000000000000000000000000000000000' as Address;
 const INTEREST_BUFFER = 10n ** 16n; // 0.01 MUSD
 
+/** System health from Mezo's TroveManager. Redemptions revert below MCR (110% TCR). */
+export async function systemHealth(price?: bigint) {
+  const p = price ?? (await pub.readContract({ address: config.priceFeed, abi: priceFeedAbi, functionName: 'fetchPrice' }));
+  const [tcr, recoveryMode] = await Promise.all([
+    pub.readContract({ address: config.troveManager, abi: troveManagerAbi, functionName: 'getTCR', args: [p] }),
+    pub.readContract({ address: config.troveManager, abi: troveManagerAbi, functionName: 'checkRecoveryMode', args: [p] }),
+  ]);
+  return { price: p, tcr, recoveryMode, canRedeem: tcr >= MCR };
+}
+
 /**
  * How much of `amount` Mezo's TroveManager will actually redeem. It walks troves from
  * the riskiest up: a trove is closed in full if the MUSD covers its net debt; otherwise
@@ -60,10 +70,16 @@ export type RedemptionPlan = {
   truncated: bigint;
   /** MUSD needed to clear the riskiest trove; smaller batches may not redeem at all. */
   minBatch: string;
+  /** Mezo's total collateral ratio (e.g. 2.67 = 267%) and whether it is in Recovery Mode. */
+  tcr: number;
+  recoveryMode: boolean;
+  /** Why a redemption would fail right now, if it would. */
+  blocked: string | null;
 };
 
 export async function planRedemption(musd: number): Promise<RedemptionPlan> {
   const price = await pub.readContract({ address: config.priceFeed, abi: priceFeedAbi, functionName: 'fetchPrice' });
+  const health = await systemHealth(price);
   const r = await redeemable(parseUnits(musd.toFixed(18), 18), price);
   const amount = r.amount;
   const [firstHint, partialNICR, truncated] =
@@ -112,6 +128,13 @@ export async function planRedemption(musd: number): Promise<RedemptionPlan> {
     partialNICR,
     truncated,
     minBatch: formatUnits(r.minBatch, 18),
+    tcr: Number(formatUnits(health.tcr, 18)),
+    recoveryMode: health.recoveryMode,
+    blocked: !health.canRedeem
+      ? `Mezo's TCR is ${(Number(formatUnits(health.tcr, 18)) * 100).toFixed(1)}%, below the 110% redemptions need`
+      : truncated === 0n
+        ? `Batch too small: Mezo needs at least ${Number(formatUnits(r.minBatch, 18)).toFixed(2)} MUSD to clear the riskiest trove`
+        : null,
   };
 }
 
@@ -124,8 +147,11 @@ export async function redeemTreasury(musd?: number) {
   const want = musd ?? Number(formatUnits(bal, 18));
   if (want <= 0) throw new Error('Treasury holds no MUSD');
   const plan = await planRedemption(Math.min(want, Number(formatUnits(bal, 18))));
-  if (plan.truncated === 0n) {
-    throw new Error(`Batch too small: Mezo needs ≥ ${Number(plan.minBatch).toFixed(2)} MUSD to clear the riskiest trove`);
+  // Redemptions revert when the system's TCR is under 110%; in Recovery Mode they still
+  // work but take collateral from troves that are already at risk, so we hold off.
+  if (plan.blocked) throw new Error(plan.blocked);
+  if (plan.recoveryMode && !process.env.REDEEM_IN_RECOVERY) {
+    throw new Error(`Mezo is in Recovery Mode (TCR ${(plan.tcr * 100).toFixed(1)}%): holding redemptions. Set REDEEM_IN_RECOVERY=1 to override.`);
   }
   const before = await pub.getBalance({ address: account.address });
   const hash = await wallet.writeContract({

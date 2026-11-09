@@ -108,6 +108,39 @@ contract MezoForkTest is Base {
         assertEq(MUSD.balanceOf(treasury), amount, "treasury paid");
     }
 
+    /// Wave 1 review: someone copies the borrow signature out of a pending relay and
+    /// submits it to Mezo's real BorrowerOperationsSignatures first. The relay must still
+    /// open the order against the MUSD that landed in the desk.
+    function test_fork_borrowFrontRun_realMezo() public {
+        if (block.chainid != 31611) return;
+        uint256 amount = 120e18;
+        uint256 dl = block.timestamp + 1 hours;
+        bytes memory bsig = _borrowSig(amount, 0, dl);
+        OwoDesk.Intent memory it = OwoDesk.Intent({
+            owner: user,
+            amount: amount,
+            minNaira: 1,
+            recipientHash: keccak256("salt|GTBINGLA|0123456789"),
+            deadline: dl
+        });
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userKey, desk.intentDigest(it));
+
+        vm.prank(address(0xBAD)); // front-runner
+        IBorrowerOperationsSignatures(BOS).withdrawMUSDWithSignature(
+            amount, address(0), address(0), user, address(desk), bsig, dl
+        );
+        assertEq(desk.unassigned(), amount, "MUSD stranded in the desk");
+
+        vm.prank(relayer);
+        uint256 id = desk.borrowAndCashOut(it, abi.encodePacked(r, s, v), address(0), address(0), bsig, dl);
+        assertEq(desk.getOrder(id).owner, user, "order opened for the owner");
+        assertEq(desk.unassigned(), 0, "assigned");
+
+        vm.prank(user);
+        desk.cancel(id);
+        assertEq(MUSD.balanceOf(user), 2_000e18 + amount, "owner gets the borrowed MUSD");
+    }
+
     function test_fork_borrowSigForOtherRecipientFails() public {
         if (block.chainid != 31611) return;
         uint256 dl = block.timestamp + 1 hours;

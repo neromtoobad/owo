@@ -23,6 +23,8 @@ interface IBorrowerOperationsSignatures {
         bytes memory signature,
         uint256 deadline
     ) external;
+
+    function getNonce(address borrower) external view returns (uint256);
 }
 
 /// @title OwoDesk
@@ -41,6 +43,11 @@ interface IBorrowerOperationsSignatures {
 ///
 /// The CashOut intent binds the bank-details hash and the naira floor to the owner,
 /// so a relayed signature cannot be replayed into someone else's bank account.
+///
+/// Trust model: settlement rests on the relayer's report that the naira was paid
+/// (Paycrest order id recorded on-chain). The contract guarantees the other half:
+/// MUSD only leaves for the treasury after that report, and otherwise goes back to
+/// its owner (cancel, reject, or reclaim after the settle window).
 contract OwoDesk {
     enum Status {
         None,
@@ -76,6 +83,11 @@ contract OwoDesk {
     );
     bytes32 private constant DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+    /// @dev Mezo's BorrowerOperationsSignatures typed data, to recognise a borrow signature
+    /// that someone else already submitted.
+    bytes32 public constant WITHDRAW_MUSD_TYPEHASH =
+        keccak256("WithdrawMUSD(uint256 amount,address borrower,address recipient,uint256 nonce,uint256 deadline)");
+    bytes32 private constant BOS_NAME_HASH = keccak256("BorrowerOperationsSignatures");
     bytes32 private constant NAME_HASH = keccak256("Owo");
     bytes32 private constant VERSION_HASH = keccak256("1");
     uint256 private constant SECP256K1_HALF_N = 0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0;
@@ -98,6 +110,10 @@ contract OwoDesk {
     mapping(uint256 => Order) public orders;
     mapping(address => uint256) public nonces;
     mapping(uint256 => uint256) public volumeByDay;
+    /// @notice MUSD held for Open and Taken orders. Anything above it is unassigned.
+    uint256 public lockedMusd;
+    /// @notice Borrow signatures (by WithdrawMUSD digest) already turned into an order.
+    mapping(bytes32 => bool) public borrowUsed;
 
     uint256 private locked = 1;
 
@@ -113,6 +129,8 @@ contract OwoDesk {
     event PausedSet(bool paused);
     event AdminProposed(address pendingAdmin);
     event AdminAccepted(address admin);
+    event BorrowFrontRun(uint256 indexed id, bytes32 borrowDigest);
+    event UnassignedReturned(address indexed to, uint256 amount);
 
     // Routes recorded on Opened.
     uint8 public constant ROUTE_WALLET = 0;
@@ -141,6 +159,7 @@ contract OwoDesk {
     error BadLimits();
     error TransferFailed();
     error Reentrancy();
+    error BorrowAlreadyUsed();
 
     modifier onlyAdmin() {
         if (msg.sender != admin) revert NotAdmin();
@@ -218,6 +237,12 @@ contract OwoDesk {
     /// @notice Gasless borrowing: draw MUSD from the owner's Mezo trove straight into an order.
     /// @param borrowSig the owner's WithdrawMUSD signature for BorrowerOperationsSignatures,
     /// with this contract as recipient.
+    /// @dev Anyone can submit a WithdrawMUSD signature to Mezo directly. If someone copies
+    /// it from a pending relay and submits it first, the MUSD still lands here, but with no
+    /// order. In that case the borrow call fails (nonce used), and we open the order
+    /// against that MUSD instead: the signature must recover to the owner at the nonce
+    /// just consumed, with this desk as recipient, must not have been used before, and the
+    /// desk must hold that much unassigned MUSD.
     function borrowAndCashOut(
         Intent calldata intent,
         bytes calldata intentSig,
@@ -227,12 +252,12 @@ contract OwoDesk {
         uint256 borrowDeadline
     ) external nonReentrant returns (uint256 id) {
         _checkIntent(intent, intentSig);
+        (bytes32 digest, bool frontRun) =
+            _borrow(intent.owner, intent.amount, upperHint, lowerHint, borrowSig, borrowDeadline);
+        if (borrowUsed[digest]) revert BorrowAlreadyUsed();
+        borrowUsed[digest] = true;
         id = _open(intent.owner, intent.amount, intent.minNaira, intent.recipientHash, ROUTE_BORROW);
-        uint256 before = musd.balanceOf(address(this));
-        borrowerOps.withdrawMUSDWithSignature(
-            intent.amount, upperHint, lowerHint, intent.owner, address(this), borrowSig, borrowDeadline
-        );
-        if (musd.balanceOf(address(this)) - before != intent.amount) revert MintMismatch();
+        if (frontRun) emit BorrowFrontRun(id, digest);
     }
 
     // ---------------------------------------------------------------- relayer
@@ -255,6 +280,7 @@ contract OwoDesk {
         o.status = Status.Paid;
         o.paidNaira = uint128(paidNaira);
         o.payoutRef = payoutRef;
+        lockedMusd -= o.amount;
         _push(treasury, o.amount);
         emit Paid(id, paidNaira, payoutRef);
     }
@@ -317,6 +343,15 @@ contract OwoDesk {
         emit PausedSet(_paused);
     }
 
+    /// @notice Return MUSD that belongs to no order (sent here by mistake, or a front-run
+    /// borrow whose owner never opened the order). Can never touch orders' MUSD.
+    function returnUnassigned(address to, uint256 amount) external onlyAdmin nonReentrant {
+        if (to == address(0)) revert ZeroAddress();
+        if (amount == 0 || amount > unassigned()) revert BadAmount();
+        _push(to, amount);
+        emit UnassignedReturned(to, amount);
+    }
+
     function proposeAdmin(address _admin) external onlyAdmin {
         pendingAdmin = _admin;
         emit AdminProposed(_admin);
@@ -355,6 +390,26 @@ contract OwoDesk {
         return keccak256(abi.encodePacked("\x19\x01", domainSeparator(), structHash));
     }
 
+    /// @notice MUSD held here that belongs to no order.
+    function unassigned() public view returns (uint256) {
+        uint256 bal = musd.balanceOf(address(this));
+        return bal > lockedMusd ? bal - lockedMusd : 0;
+    }
+
+    /// @notice The digest of Mezo's WithdrawMUSD typed data with this desk as recipient.
+    function borrowDigest(address borrower, uint256 amount, uint256 nonce, uint256 deadline)
+        public
+        view
+        returns (bytes32)
+    {
+        bytes32 domain = keccak256(
+            abi.encode(DOMAIN_TYPEHASH, BOS_NAME_HASH, VERSION_HASH, block.chainid, address(borrowerOps))
+        );
+        bytes32 structHash =
+            keccak256(abi.encode(WITHDRAW_MUSD_TYPEHASH, amount, borrower, address(this), nonce, deadline));
+        return keccak256(abi.encodePacked("\x19\x01", domain, structHash));
+    }
+
     function today() public view returns (uint256) {
         return block.timestamp / 1 days;
     }
@@ -390,6 +445,7 @@ contract OwoDesk {
             recipientHash: recipientHash,
             payoutRef: bytes32(0)
         });
+        lockedMusd += amount;
         emit Opened(id, owner, amount, minNaira, recipientHash, route);
     }
 
@@ -398,6 +454,7 @@ contract OwoDesk {
         // A refund on the day it opened frees that day's room again.
         uint256 day = o.openedAt / 1 days;
         if (day == today()) volumeByDay[day] -= o.amount;
+        lockedMusd -= o.amount;
         _push(o.owner, o.amount);
         emit Refunded(id, reason);
     }
@@ -407,6 +464,56 @@ contract OwoDesk {
         bytes32 digest = intentDigest(intent);
         if (_recover(digest, sig) != intent.owner) revert BadSignature();
         nonces[intent.owner]++;
+    }
+
+    /// @dev Draw `amount` from the owner's trove into this desk, or recognise that someone
+    /// already did with this exact signature (see borrowAndCashOut).
+    function _borrow(
+        address owner,
+        uint256 amount,
+        address upperHint,
+        address lowerHint,
+        bytes calldata borrowSig,
+        uint256 borrowDeadline
+    ) internal returns (bytes32 digest, bool frontRun) {
+        uint256 before = musd.balanceOf(address(this));
+        try borrowerOps.withdrawMUSDWithSignature(
+            amount, upperHint, lowerHint, owner, address(this), borrowSig, borrowDeadline
+        ) {
+            if (musd.balanceOf(address(this)) - before != amount) revert MintMismatch();
+            return (borrowDigest(owner, amount, borrowerOps.getNonce(owner) - 1, borrowDeadline), false);
+        } catch (bytes memory reason) {
+            return (_usedBorrow(owner, amount, borrowSig, borrowDeadline, reason), true);
+        }
+    }
+
+    function _usedBorrow(address owner, uint256 amount, bytes calldata borrowSig, uint256 borrowDeadline, bytes memory reason)
+        internal
+        view
+        returns (bytes32 digest)
+    {
+        uint256 n = borrowerOps.getNonce(owner);
+        if (n == 0) _bubble(reason);
+        digest = borrowDigest(owner, amount, n - 1, borrowDeadline);
+        if (_tryRecover(digest, borrowSig) != owner) _bubble(reason);
+        if (unassigned() < amount) revert MintMismatch();
+    }
+
+    /// @dev Like _recover, but returns address(0) instead of reverting.
+    function _tryRecover(bytes32 digest, bytes calldata sig) internal pure returns (address) {
+        if (sig.length != 65) return address(0);
+        bytes32 r = bytes32(sig[0:32]);
+        bytes32 s = bytes32(sig[32:64]);
+        uint8 v = uint8(sig[64]);
+        if (v < 27) v += 27;
+        if (uint256(s) > SECP256K1_HALF_N || (v != 27 && v != 28)) return address(0);
+        return ecrecover(digest, v, r, s);
+    }
+
+    function _bubble(bytes memory reason) internal pure {
+        assembly {
+            revert(add(reason, 32), mload(reason))
+        }
     }
 
     function _recover(bytes32 digest, bytes calldata sig) internal pure returns (address signer) {

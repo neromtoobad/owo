@@ -80,6 +80,11 @@ export function Header() {
           <span className="wrap">Demo payouts: the naira bank transfer is simulated.</span>
         </div>
       )}
+      {config?.mode === "paused" && (
+        <div className="demo-strip">
+          <span className="wrap">Live payouts are paused, so cash-outs are closed for now. Any open order is refunded to its owner.</span>
+        </div>
+      )}
     </header>
   );
 }
@@ -103,7 +108,12 @@ export function Footer() {
               Desk contract
             </a>
           )}
-          <a href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer">Testnet faucet</a>
+          <a href="/status">Status</a>
+          {config?.net === "testnet" ? (
+            <a href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer">Testnet faucet</a>
+          ) : (
+            <a href="https://testnet.owo.nerom.site">Try on testnet</a>
+          )}
         </div>
       </div>
       {config?.net === "testnet" && (

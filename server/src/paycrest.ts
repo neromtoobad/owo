@@ -44,6 +44,29 @@ export async function banks(): Promise<Bank[]> {
 }
 
 const rateCache = new Map<string, { at: number; rate: number }>();
+// Recently accepted rates. Paycrest has briefly quoted about half the real NGN rate
+// (₦683 vs ₦1,373 on Nov 9 2026); a quote that far off would underpay a real payout,
+// so it is refused rather than used.
+const recent: { at: number; rate: number }[] = [];
+const RATE_FLOOR = Number(process.env.NGN_RATE_FLOOR ?? '900');
+const MAX_JUMP = 0.12;
+
+function median(xs: number[]) {
+  const a = [...xs].sort((x, y) => x - y);
+  return a[Math.floor(a.length / 2)];
+}
+
+export function rateLooksWrong(r: number): string | null {
+  if (r < RATE_FLOOR) return `Paycrest quoted ₦${r}/$, below the ₦${RATE_FLOOR} sanity floor`;
+  const since = Date.now() - 6 * 3600_000;
+  const xs = recent.filter((x) => x.at >= since).map((x) => x.rate);
+  if (xs.length >= 3) {
+    const m = median(xs);
+    if (Math.abs(r - m) / m > MAX_JUMP) return `Paycrest quoted ₦${r}/$, ${((r / m - 1) * 100).toFixed(0)}% off the recent ₦${m}/$`;
+  }
+  return null;
+}
+
 /** NGN per USDC for this order size, as Paycrest quotes it right now. */
 export async function rate(usdc: number): Promise<number> {
   const bucket = usdc <= 10 ? 10 : usdc <= 100 ? 100 : usdc <= 1000 ? 1000 : Math.ceil(usdc / 1000) * 1000;
@@ -52,7 +75,14 @@ export async function rate(usdc: number): Promise<number> {
   if (hit && Date.now() - hit.at < 30_000) return hit.rate;
   const r = Number(await get<string>(`/v1/rates/USDC/${bucket}/NGN`));
   if (!Number.isFinite(r) || r <= 0) throw new Error('No NGN rate from Paycrest');
+  const bad = rateLooksWrong(r);
+  if (bad) {
+    console.warn(`rate guard: ${bad}`);
+    throw new Error("Paycrest's naira rate looks wrong right now. Try again in a minute.");
+  }
   rateCache.set(key, { at: Date.now(), rate: r });
+  recent.push({ at: Date.now(), rate: r });
+  if (recent.length > 50) recent.shift();
   return r;
 }
 

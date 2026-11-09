@@ -104,23 +104,37 @@ export async function account(addr: Address) {
   ]);
   let trove = null;
   if (troveStatus === 1) {
-    const [coll, debt, price, bosNonce] = await Promise.all([
-      pub.readContract({ address: config.troveManager, abi: troveManagerAbi, functionName: 'getTroveColl', args: [addr] }),
-      pub.readContract({ address: config.troveManager, abi: troveManagerAbi, functionName: 'getTroveDebt', args: [addr] }),
+    const [entire, price, bosNonce, rateBps] = await Promise.all([
+      pub.readContract({ address: config.troveManager, abi: troveManagerAbi, functionName: 'getEntireDebtAndColl', args: [addr] }),
       pub.readContract({ address: config.priceFeed, abi: priceFeedAbi, functionName: 'fetchPrice' }),
       pub.readContract({ address: config.borrowerOpsSignatures, abi: bosAbi, functionName: 'getNonce', args: [addr] }),
+      pub.readContract({ address: config.troveManager, abi: troveManagerAbi, functionName: 'getTroveInterestRate', args: [addr] }),
     ]);
-    const collUsd = (Number(formatUnits(coll, 18)) * Number(formatUnits(price, 18)));
-    const debtN = Number(formatUnits(debt, 18));
-    // Keep a safe 150% after borrowing; the 0.1% borrowing fee is added to debt.
+    const [coll, principal, interest, , pendingPrincipal, pendingInterest] = entire;
+    const [tcr, recoveryMode] = await Promise.all([
+      pub.readContract({ address: config.troveManager, abi: troveManagerAbi, functionName: 'getTCR', args: [price] }),
+      pub.readContract({ address: config.troveManager, abi: troveManagerAbi, functionName: 'checkRecoveryMode', args: [price] }),
+    ]);
+    const collN = Number(formatUnits(coll, 18));
+    const priceN = Number(formatUnits(price, 18));
+    const collUsd = collN * priceN;
+    const debtN = Number(formatUnits(principal + interest + pendingPrincipal + pendingInterest, 18));
+    // Keep a safe 150% after borrowing (Mezo's CCR, also its Recovery Mode floor); the
+    // 0.1% borrowing fee is added to debt.
     const borrowable = Math.max(0, Math.floor((collUsd / 1.5 - debtN) / 1.001 * 100) / 100);
     trove = {
       coll: formatUnits(coll, 18),
-      debt: formatUnits(debt, 18),
-      price: Number(formatUnits(price, 18)),
+      debt: debtN.toFixed(2),
+      interestOwed: Number(formatUnits(interest + pendingInterest, 18)).toFixed(2),
+      interestRatePct: Number(rateBps) / 100,
+      price: priceN,
       icr: debtN > 0 ? (collUsd / debtN) * 100 : null,
+      // BTC price at which this loan falls under Mezo's 110% and can be liquidated.
+      liquidationPrice: collN > 0 ? (debtN * 1.1) / collN : null,
+      borrowFeePct: 0.1,
       borrowable: borrowable.toFixed(2),
       bosNonce: bosNonce.toString(),
+      system: { tcr: Number(formatUnits(tcr, 18)) * 100, recoveryMode },
     };
   }
   return {

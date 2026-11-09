@@ -319,6 +319,10 @@ section[id] { scroll-margin-top: 72px; }
 
 /* trove */
 .trove { border: 1px solid var(--line-2); border-radius: var(--r-lg); padding: 16px; background: var(--surface-2); display: grid; gap: 16px; }
+.risk { display: grid; gap: 8px; border-top: 1px solid var(--line-2); padding-top: 12px; }
+.risk-row { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.risk-row strong { font-variant-numeric: tabular-nums; }
+.risk p { margin: 0; }
 .trove-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .trove-grid > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .trove-grid strong { font-family: var(--display); font-size: 17px; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -460,3 +464,22 @@ section[id] { scroll-margin-top: 72px; }
   *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
   html { scroll-behavior: auto; }
 }
+
+/* status page */
+.status-page { display: grid; gap: 20px; padding-bottom: 40px; }
+.status-page .page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.stat-card { border: 1px solid var(--line-2); border-radius: var(--r-lg); padding: 16px; background: var(--surface-2); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.stat-card strong { font-family: var(--display); font-size: 22px; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.kv { display: grid; gap: 8px; margin: 0; }
+.kv > div { display: grid; grid-template-columns: minmax(140px, 220px) 1fr; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-2); }
+.kv dt { color: var(--ink-3); font-size: 14px; }
+.kv dd { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line-2); border-radius: var(--r-lg); }
+.ledger { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ledger th, .ledger td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line-2); white-space: nowrap; }
+.ledger th { font-weight: 600; font-size: 12px; color: var(--ink-3); }
+.ledger .num { text-align: right; font-variant-numeric: tabular-nums; }
+.badge-ok { background: var(--green-tint); color: var(--green-deep); }
+@media (max-width: 560px) { .kv > div { grid-template-columns: 1fr; gap: 2px; } }

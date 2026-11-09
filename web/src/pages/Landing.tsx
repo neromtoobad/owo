@@ -203,7 +203,7 @@ export default function Landing() {
               <h3>Your MUSD comes back</h3>
               <p>
                 Cancel any time before the desk picks your order up. If it's picked up but not paid within {hours} hours, reclaim
-                it yourself. The contract enforces both.
+                it yourself. The contract enforces both; settlement rests on the relayer's payout report.
               </p>
             </article>
           </div>
@@ -216,8 +216,13 @@ export default function Landing() {
             <p className="eyebrow">If anything goes wrong</p>
             <h2 className="h2">The contract holds your MUSD, not us.</h2>
             <p className="lede-sm">
-              Your MUSD sits in the OwoDesk contract on Mezo until the naira is confirmed. Only you can pull it back, and only the
-              contract decides when.
+              Your MUSD sits in the OwoDesk contract on Mezo until the payout. The contract enforces your way out: cancel before
+              pickup, or reclaim if it isn't paid in time.
+            </p>
+            <p className="lede-sm">
+              <strong>What you trust us with:</strong> the contract can't see a bank. Settlement rests on the Owo relayer's report that
+              the naira was paid, recorded on-chain with the Paycrest order id so anyone can check it. The relayer can never send
+              your MUSD anywhere but the treasury, and only for an order you signed.
             </p>
           </div>
           <ol className="flow">
@@ -233,7 +238,7 @@ export default function Landing() {
             </li>
             <li>
               <strong>Paid</strong>
-              <span>The desk settles on-chain with the amount of naira paid, never below your signed minimum.</span>
+              <span>The relayer reports the payout and settles on-chain with the naira paid and the Paycrest order id, never below your signed minimum.</span>
               <em>Receipt on the Mezo explorer.</em>
             </li>
           </ol>
@@ -246,13 +251,25 @@ export default function Landing() {
             <div>
               <h2 className="h3">New to Mezo?</h2>
               <p className="muted">
-                To borrow against BTC you need a Mezo trove. On testnet, grab free test BTC, open a trove, then come back.
+                {config?.net === "mainnet"
+                  ? "To borrow against BTC you need a Mezo trove (smallest loan 1,800 MUSD). Already hold MUSD? Cash it out straight from your wallet."
+                  : "To borrow against BTC you need a Mezo trove. On testnet, grab free test BTC, open a trove, then come back."}
               </p>
             </div>
             <div className="newbie-links">
-              <a className="btn btn-ghost" href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer">1. Get test BTC</a>
-              <a className="btn btn-ghost" href="https://testnet.mezo.org" target="_blank" rel="noreferrer">2. Open a trove</a>
-              <Link className="btn btn-primary" to="/cash-out">3. Cash out</Link>
+              {config?.net === "mainnet" ? (
+                <>
+                  <a className="btn btn-ghost" href="https://mezo.org" target="_blank" rel="noreferrer">1. Open a trove on Mezo</a>
+                  <a className="btn btn-ghost" href="https://testnet.owo.nerom.site">Practise on testnet</a>
+                  <Link className="btn btn-primary" to="/cash-out">2. Cash out</Link>
+                </>
+              ) : (
+                <>
+                  <a className="btn btn-ghost" href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer">1. Get test BTC</a>
+                  <a className="btn btn-ghost" href="https://testnet.mezo.org" target="_blank" rel="noreferrer">2. Open a trove</a>
+                  <Link className="btn btn-primary" to="/cash-out">3. Cash out</Link>
+                </>
+              )}
             </div>
           </div>
         </div>

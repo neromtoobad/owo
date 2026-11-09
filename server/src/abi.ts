@@ -16,6 +16,9 @@ export const troveManagerAbi = parseAbi([
   'function getCurrentICR(address,uint256) view returns (uint256)',
   'function getEntireDebtAndColl(address) view returns (uint256 coll, uint256 principal, uint256 interest, uint256 pendingColl, uint256 pendingPrincipal, uint256 pendingInterest)',
   'function redeemCollateral(uint256 amount, address firstHint, address upperPartialHint, address lowerPartialHint, uint256 partialNICR, uint256 maxIterations)',
+  'function getTroveInterestRate(address) view returns (uint16)',
+  'function getTCR(uint256 price) view returns (uint256)',
+  'function checkRecoveryMode(uint256 price) view returns (bool)',
 ]);
 
 export const hintHelpersAbi = parseAbi([

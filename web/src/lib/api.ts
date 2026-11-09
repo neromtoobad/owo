@@ -14,7 +14,8 @@ export interface Config {
   maxOrder: string;
   dayRoom: string;
   settleWindowSec: number;
-  mode: "demo" | "live";
+  mode: "demo" | "live" | "paused";
+  userDayCap?: number;
   paycrestRate: number;
 }
 
@@ -42,6 +43,11 @@ export interface Trove {
   price: number;
   borrowable: string;
   bosNonce: number | string;
+  interestOwed?: string;
+  interestRatePct?: number;
+  liquidationPrice?: number | null;
+  borrowFeePct?: number;
+  system?: { tcr: number; recoveryMode: boolean };
 }
 
 export interface Account {
@@ -150,4 +156,25 @@ export const api = {
   order: (id: string) => req<Order>(`/orders/${encodeURIComponent(id)}`),
   orders: (owner: string) => req<OrderSummary[]>(`/orders?owner=${owner}`),
   stats: () => req<Stats>("/stats"),
+  status: () => req<DeskStatus>("/status"),
 };
+
+export interface DeskStatus {
+  net: "testnet" | "mainnet";
+  chainId: number;
+  explorer: string;
+  desk: Hex;
+  relayer: Hex | null;
+  relayerBtc: string;
+  treasury: Hex;
+  treasuryMusd: string;
+  lockedMusd: string | null;
+  unassignedMusd: string | null;
+  limits: { minOrder: string; maxOrder: string; dayRoom: string; userDayCap: number; settleWindowSec: number };
+  mode: "demo" | "live" | "paused";
+  float: { address: Hex; usdc: number; eth: number; chain: string; gateway: Hex } | null;
+  mezo: { tcrPct: number; recoveryMode: boolean; btcPrice: number } | null;
+  totals: { orders: number; paid: number; musdPaid: number; nairaPaid: number };
+  orders: (Omit<Order, "bank"> & { bank: { name: string } | null })[];
+  at: number;
+}

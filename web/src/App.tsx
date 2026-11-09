@@ -6,6 +6,7 @@ import Landing from "./pages/Landing";
 import CashOut from "./pages/CashOut";
 import OrderPage from "./pages/Order";
 import Orders from "./pages/Orders";
+import Status from "./pages/Status";
 
 function Routes() {
   const path = usePath().replace(/\/+$/, "") || "/";
@@ -13,7 +14,7 @@ function Routes() {
   const m = path.match(/^\/order\/([^/]+)$/);
 
   useEffect(() => {
-    const t: Record<string, string> = { "/": "Owo · Your Bitcoin, in naira", "/cash-out": "Cash out · Owo", "/orders": "My cash-outs · Owo" };
+    const t: Record<string, string> = { "/": "Owo · Your Bitcoin, in naira", "/cash-out": "Cash out · Owo", "/orders": "My cash-outs · Owo", "/status": "Status · Owo" };
     document.title = m ? `Cash-out #${m[1]} · Owo` : t[path] ?? "Owo";
   }, [path, m]);
 
@@ -21,6 +22,7 @@ function Routes() {
   if (path === "/") page = <Landing />;
   else if (path === "/cash-out") page = <CashOut />;
   else if (path === "/orders") page = <Orders />;
+  else if (path === "/status") page = <Status />;
   else if (m) page = <OrderPage id={decodeURIComponent(m[1])} key={m[1]} />;
   else
     page = (

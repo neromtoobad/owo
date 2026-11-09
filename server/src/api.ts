@@ -8,8 +8,9 @@ import { deskAbi } from './abi.ts';
 import { account, desk, deskParams, dexExit, pub, readOrder, relayerAccount, serial, wallet } from './chain.ts';
 import * as paycrest from './paycrest.ts';
 import { store } from './store.ts';
-import { kick, quoteNaira } from './worker.ts';
-import { planRedemption } from './redeem.ts';
+import { kick, quoteNaira, usedToday } from './worker.ts';
+import { liveFor } from './config.ts';
+import { planRedemption, systemHealth } from './redeem.ts';
 
 export const app = new Hono();
 
@@ -68,7 +69,9 @@ app.get('/api/config', async (c) => {
     dayRoom: p ? formatUnits(p.dayRoom, 18) : '0',
     settleWindowSec: p ? Number(p.settleWindow) : 21600,
     // On testnet only allow-listed wallets get live payouts, so the app stays in demo mode.
-    mode: config.live && config.net === 'mainnet' ? 'live' : 'demo',
+    // Mainnet never simulates a payout: without live payouts it is paused, not demo.
+    mode: config.net === 'mainnet' ? (config.live && config.paycrestKey ? 'live' : 'paused') : 'demo',
+    userDayCap: config.userDayCap,
     liveOwners: config.net === 'testnet' ? config.liveOwners : [],
     paycrestRate,
   });
@@ -168,6 +171,10 @@ function intentArg(i: Intent) {
 async function relay(c: { req: { header(k: string): string | undefined } }, intent: Intent, functionName: string, args: unknown[]) {
   if (!wallet || !relayerAccount) throw new Error('Relayer is not configured');
   if (!store.recipient(intent.recipientHash)) throw new Error('Register the bank details first');
+  if (config.net === 'mainnet' && !liveFor(intent.owner)) throw new Error('Live payouts are paused right now. Nothing was signed on-chain.');
+  const want = Number(formatUnits(BigInt(intent.amount), 18));
+  const used = usedToday(intent.owner);
+  if (used + want > config.userDayCap) throw new Error(`Owo's limit is ${config.userDayCap} MUSD per wallet per day; you have ${Math.max(0, config.userDayCap - used).toFixed(2)} left today`);
   if (limited(`relay:${intent.owner.toLowerCase()}`) || limited(`relayip:${c.req.header('x-forwarded-for') ?? 'local'}`, 20)) {
     throw new Error('Too many cash-outs in the last hour');
   }
@@ -303,6 +310,59 @@ app.get('/api/stats', async (c) => {
     nairaPaid: paid.reduce((t, m) => t + (m.naira ?? 0), 0),
     musdIn: paid.reduce((t, m) => t + (m.usdc ?? 0), 0),
   });
+});
+
+/** Public status: reserves, payout float, Mezo's health and every order, so anyone can audit the desk. */
+let statusCache: { at: number; body: unknown } | undefined;
+app.get('/api/status', async (c) => {
+  if (statusCache && Date.now() - statusCache.at < 15_000) return c.json(statusCache.body);
+  const d = desk();
+  const read = (functionName: string) => pub.readContract({ address: d, abi: deskAbi, functionName } as never) as Promise<bigint>;
+  const [p, locked, unassigned, health, relayerBal, float] = await Promise.all([
+    deskParams(),
+    read('lockedMusd').catch(() => null),
+    read('unassigned').catch(() => null),
+    systemHealth().catch(() => null),
+    relayerAccount ? pub.getBalance({ address: relayerAccount.address }) : Promise.resolve(0n),
+    paycrest.floatStatus().catch(() => null),
+  ]);
+  const treasury = (await pub.readContract({ address: d, abi: deskAbi, functionName: 'treasury' } as never)) as Address;
+  const treasuryMusd = await pub.readContract({
+    address: config.musd,
+    abi: [{ type: 'function', name: 'balanceOf', stateMutability: 'view', inputs: [{ type: 'address' }], outputs: [{ type: 'uint256' }] }],
+    functionName: 'balanceOf',
+    args: [treasury],
+  });
+  const orders = [];
+  for (let id = Number(p.orderCount); id >= 1 && orders.length < 50; id--) {
+    const v = await orderView(id);
+    if (v) {
+      const { bank, ...rest } = v;
+      orders.push({ ...rest, bank: bank ? { name: bank.name } : null });
+    }
+  }
+  const paid = orders.filter((o) => o.status === 'paid');
+  const body = {
+    net: config.net,
+    chainId: config.chainId,
+    explorer: config.explorer,
+    desk: d,
+    relayer: relayerAccount?.address ?? null,
+    relayerBtc: formatUnits(relayerBal, 18),
+    treasury,
+    treasuryMusd: formatUnits(treasuryMusd as bigint, 18),
+    lockedMusd: locked != null ? formatUnits(locked, 18) : null,
+    unassignedMusd: unassigned != null ? formatUnits(unassigned, 18) : null,
+    limits: { minOrder: formatUnits(p.minOrder, 18), maxOrder: formatUnits(p.maxOrder, 18), dayRoom: formatUnits(p.dayRoom, 18), userDayCap: config.userDayCap, settleWindowSec: Number(p.settleWindow) },
+    mode: config.net === 'mainnet' ? (config.live && config.paycrestKey ? 'live' : 'paused') : 'demo',
+    float: float ? { ...float, chain: 'Base', gateway: config.baseGateway } : null,
+    mezo: health ? { tcrPct: Number(formatUnits(health.tcr, 18)) * 100, recoveryMode: health.recoveryMode, btcPrice: Number(formatUnits(health.price, 18)) } : null,
+    totals: { orders: Number(p.orderCount), paid: paid.length, musdPaid: paid.reduce((t, o) => t + Number(o.amount), 0), nairaPaid: paid.reduce((t, o) => t + (o.paidNaira || 0), 0) },
+    orders,
+    at: Date.now(),
+  };
+  statusCache = { at: Date.now(), body };
+  return c.json(body);
 });
 
 // The built web app.

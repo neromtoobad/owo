@@ -17,6 +17,9 @@ export type Step = { key: string; label: string; at: number | null; done: boolea
 export type OrderMeta = {
   id: number;
   mode: 'demo' | 'live';
+  owner?: string;
+  musd?: number;
+  openedAt?: number;
   openTx?: string;
   takeTx?: string;
   settleTx?: string;

@@ -170,7 +170,37 @@ async function main() {
     const replay = await fetch(`${API}/api/relay/borrow`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ intent: strIntent, intentSig, borrowSig, borrowDeadline: deadline.toString() }) });
     ok(replay.status === 400, `replayed signature refused (${(await replay.json()).error})`);
 
-    for (const id of [1, 2]) {
+    // ---- Route 3 under attack: someone copies the borrow signature and submits it to Mezo first.
+    const acct3 = await j(`/api/account/${user.address}`);
+    const amount3 = parseEther('40');
+    const q3 = await j('/api/quote?musd=40');
+    const intent3 = { owner: user.address, amount: amount3, minNaira: BigInt(q3.minNaira * 100), recipientHash, deadline };
+    const intentSig3 = await user.signTypedData({
+      domain: { name: 'Owo', version: '1', chainId: 31611, verifyingContract: desk },
+      types: { CashOut: [{ name: 'owner', type: 'address' }, { name: 'amount', type: 'uint256' }, { name: 'minNaira', type: 'uint256' }, { name: 'recipientHash', type: 'bytes32' }, { name: 'nonce', type: 'uint256' }, { name: 'deadline', type: 'uint256' }] },
+      primaryType: 'CashOut',
+      message: { ...intent3, nonce: BigInt(acct3.deskNonce) },
+    });
+    const borrowSig3 = await user.signTypedData({
+      domain: { name: 'BorrowerOperationsSignatures', version: '1', chainId: 31611, verifyingContract: BOS },
+      types: { WithdrawMUSD: [{ name: 'amount', type: 'uint256' }, { name: 'borrower', type: 'address' }, { name: 'recipient', type: 'address' }, { name: 'nonce', type: 'uint256' }, { name: 'deadline', type: 'uint256' }] },
+      primaryType: 'WithdrawMUSD',
+      message: { amount: amount3, borrower: user.address, recipient: desk, nonce: BigInt(acct3.trove.bosNonce), deadline },
+    });
+    const attacker = privateKeyToAccount(generatePrivateKey());
+    await test.setBalance({ address: attacker.address, value: parseEther('1') });
+    const attackerWallet = createWalletClient({ chain, transport: http(RPC), account: attacker });
+    const bosAbi = parseAbi(['function withdrawMUSDWithSignature(uint256,address,address,address,address,bytes,uint256)']);
+    const zero = '0x0000000000000000000000000000000000000000';
+    const fr = await attackerWallet.writeContract({ address: BOS, abi: bosAbi, functionName: 'withdrawMUSDWithSignature', args: [amount3, zero, zero, user.address, desk, borrowSig3, deadline] });
+    await pub.waitForTransactionReceipt({ hash: fr });
+    const deskRead = parseAbi(['function unassigned() view returns (uint256)']);
+    ok((await pub.readContract({ address: desk, abi: deskRead, functionName: 'unassigned' })) === amount3, 'front-runner minted 40 MUSD into the desk with no order');
+    const r3 = await j('/api/relay/borrow', { intent: { ...strIntent, amount: amount3.toString(), minNaira: intent3.minNaira.toString() }, intentSig: intentSig3, borrowSig: borrowSig3, borrowDeadline: deadline.toString() });
+    ok(r3.orderId === 3, `relay still opened order #${r3.orderId} against that MUSD`);
+    ok((await pub.readContract({ address: desk, abi: deskRead, functionName: 'unassigned' })) === 0n, 'nothing left unassigned');
+
+    for (const id of [1, 2, 3]) {
       let o: any;
       for (let i = 0; i < 60; i++) {
         o = await j(`/api/orders/${id}`);
@@ -180,9 +210,11 @@ async function main() {
       ok(o.status === 'paid', `order #${id} ${o.route}: paid ₦${o.paidNaira.toLocaleString()} ≥ floor ₦${o.minNaira.toLocaleString()} · steps ${o.payout.steps.filter((s: any) => s.done).length}/5`);
     }
     const stats = await j('/api/stats');
-    ok(stats.paid === 2, `stats: ${stats.paid} paid, ₦${Math.round(stats.nairaPaid).toLocaleString()}`);
+    ok(stats.paid === 3, `stats: ${stats.paid} paid, ₦${Math.round(stats.nairaPaid).toLocaleString()}`);
     const list = await j(`/api/orders?owner=${user.address}`);
-    ok(list.length === 2, 'order history lists both');
+    ok(list.length === 3, 'order history lists all three');
+    const st = await j('/api/status');
+    ok(st.totals.paid === 3 && st.lockedMusd === '0' && st.unassignedMusd === '0' && st.mezo?.tcrPct > 110, `public status: ${st.totals.paid} paid, locked ${st.lockedMusd}, Mezo TCR ${st.mezo.tcrPct.toFixed(0)}%`);
     // The treasury exits through Mezo redemption, not the DEX. Batch first: Mezo only
     // redeems once the batch clears the riskiest trove.
     const musdAbi = parseAbi(['function transfer(address,uint256) returns (bool)', 'function balanceOf(address) view returns (uint256)']);

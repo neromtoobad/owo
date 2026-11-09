@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { parseUnits } from "viem";
-import { api, type Account, type Bank, type Hex, type Intent, type Quote } from "../lib/api";
+import { api, type Account, type Bank, type Hex, type Intent, type Quote, type Trove } from "../lib/api";
 import { rememberOrder, useApp } from "../lib/app";
 import { useNow, useQuote } from "../lib/hooks";
 import { btc, cleanAmount, duration, musd, naira, rate, short, usd } from "../lib/format";
@@ -87,6 +87,52 @@ function WalletStep({ onDone }: { onDone: () => void }) {
 
 /* ------------------------------------------------------------------ amount */
 
+/** What borrowing this much costs and how close it brings the loan to liquidation. */
+function TroveRisk({ trove, n }: { trove: Trove; n: number }) {
+  const coll = Number(trove.coll);
+  const fee = (trove.borrowFeePct ?? 0.1) / 100;
+  const debtAfter = Number(trove.debt) + (n > 0 ? n * (1 + fee) : 0);
+  const liqNow = trove.liquidationPrice ?? (coll > 0 ? (Number(trove.debt) * 1.1) / coll : null);
+  const liqAfter = coll > 0 && n > 0 ? (debtAfter * 1.1) / coll : null;
+  const drop = (p: number | null) => (p ? Math.max(0, (1 - p / trove.price) * 100) : null);
+  const rate = trove.interestRatePct;
+  return (
+    <div className="risk">
+      <div className="risk-row">
+        <span className="tiny muted">Liquidation price</span>
+        <span>
+          <strong>{liqNow ? usd(liqNow) : "—"}</strong>
+          {liqAfter != null && <> → <strong className={drop(liqAfter)! < 25 ? "err-text" : ""}>{usd(liqAfter)}</strong></>}
+          <span className="tiny muted"> · BTC can fall {drop(liqAfter ?? liqNow)?.toFixed(0)}% first</span>
+        </span>
+      </div>
+      <div className="risk-row">
+        <span className="tiny muted">Interest</span>
+        <span>
+          <strong>{rate != null ? `${rate}% a year, fixed` : "Mezo's trove rate"}</strong>
+          {rate != null && n > 0 && <span className="tiny muted"> · ≈ {musd(((n * rate) / 100).toFixed(2))} MUSD a year on this borrow</span>}
+        </span>
+      </div>
+      <div className="risk-row">
+        <span className="tiny muted">Borrowing fee</span>
+        <span>
+          <strong>{(fee * 100).toFixed(1)}%</strong>
+          {n > 0 && <span className="tiny muted"> · {musd((n * fee).toFixed(2))} MUSD added to your debt by Mezo</span>}
+        </span>
+      </div>
+      {trove.system?.recoveryMode && (
+        <p className="small err-text">
+          Mezo is in Recovery Mode (system ratio {trove.system.tcr.toFixed(0)}%). Loans under 150% can be liquidated, so Owo keeps you above it.
+        </p>
+      )}
+      <p className="tiny muted">
+        Your loan stays on Mezo. If BTC falls below the liquidation price, Mezo can close it and keep the BTC. Repay or add BTC on
+        mezo.org any time.
+      </p>
+    </div>
+  );
+}
+
 function IcrMeter({ now, after }: { now: number; after: number | null }) {
   const lo = 110;
   const hi = 330;
@@ -117,19 +163,25 @@ function IcrMeter({ now, after }: { now: number; after: number | null }) {
 }
 
 function NoTrove() {
+  const { config } = useApp();
+  const main = config?.net === "mainnet";
   return (
     <div className="helper">
       <Bitcoin size={22} />
       <div>
         <strong>No Mezo trove on this wallet yet</strong>
         <p className="small muted">
-          A trove lets you borrow MUSD against BTC. On testnet: get free test BTC from the faucet, open a trove on Mezo, then come back.
+          {main
+            ? "A trove lets you borrow MUSD against BTC. Mezo's smallest loan is 1,800 MUSD. Open one on mezo.org and come back, or cash out MUSD you already hold."
+            : "A trove lets you borrow MUSD against BTC. On testnet: get free test BTC from the faucet, open a trove on Mezo, then come back."}
         </p>
         <div className="helper-links">
-          <a href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer">
-            Testnet faucet <External />
-          </a>
-          <a href="https://testnet.mezo.org" target="_blank" rel="noreferrer">
+          {!main && (
+            <a href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer">
+              Testnet faucet <External />
+            </a>
+          )}
+          <a href={main ? "https://mezo.org" : "https://testnet.mezo.org"} target="_blank" rel="noreferrer">
             Open a trove on Mezo <External />
           </a>
         </div>
@@ -248,11 +300,13 @@ export default function CashOut() {
   const newIcr = useMemo(() => {
     if (!trove || !(n > 0)) return null;
     const coll = Number(trove.coll) * trove.price;
-    return (coll / (Number(trove.debt) + n)) * 100;
+    return (coll / (Number(trove.debt) + n * (1 + (trove.borrowFeePct ?? 0.1) / 100))) * 100;
   }, [trove, n]);
 
   const amountError = useMemo(() => {
     if (!config || !(n > 0)) return null;
+    if (config.mode === "paused") return "Live payouts are paused, so cash-outs are closed for now.";
+    if (config.userDayCap && n > config.userDayCap) return `Owo's limit is ${musd(String(config.userDayCap))} MUSD per wallet per day.`;
     if (n < Number(config.minOrder)) return `The minimum cash-out is ${musd(config.minOrder)} MUSD.`;
     if (n > Number(config.maxOrder)) return `The maximum per cash-out is ${musd(config.maxOrder)} MUSD.`;
     if (n > Number(config.dayRoom)) return `The desk has ${musd(config.dayRoom)} MUSD of room left today. Try a smaller amount.`;
@@ -594,6 +648,7 @@ function AmountStep(p: {
             </div>
           </div>
           <IcrMeter now={trove.icr} after={p.newIcr} />
+          <TroveRisk trove={trove} n={n} />
         </div>
       )}
 

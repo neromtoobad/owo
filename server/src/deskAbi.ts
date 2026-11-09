@@ -128,6 +128,19 @@ export const deskAbi = [
  },
  {
   "type": "function",
+  "name": "WITHDRAW_MUSD_TYPEHASH",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
   "name": "acceptAdmin",
   "inputs": [],
   "outputs": [],
@@ -216,6 +229,59 @@ export const deskAbi = [
    }
   ],
   "stateMutability": "nonpayable"
+ },
+ {
+  "type": "function",
+  "name": "borrowDigest",
+  "inputs": [
+   {
+    "name": "borrower",
+    "type": "address",
+    "internalType": "address"
+   },
+   {
+    "name": "amount",
+    "type": "uint256",
+    "internalType": "uint256"
+   },
+   {
+    "name": "nonce",
+    "type": "uint256",
+    "internalType": "uint256"
+   },
+   {
+    "name": "deadline",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "borrowUsed",
+  "inputs": [
+   {
+    "name": "",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "",
+    "type": "bool",
+    "internalType": "bool"
+   }
+  ],
+  "stateMutability": "view"
  },
  {
   "type": "function",
@@ -496,6 +562,19 @@ export const deskAbi = [
  },
  {
   "type": "function",
+  "name": "lockedMusd",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
   "name": "maxOrder",
   "inputs": [],
   "outputs": [
@@ -704,6 +783,24 @@ export const deskAbi = [
  },
  {
   "type": "function",
+  "name": "returnUnassigned",
+  "inputs": [
+   {
+    "name": "to",
+    "type": "address",
+    "internalType": "address"
+   },
+   {
+    "name": "amount",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "outputs": [],
+  "stateMutability": "nonpayable"
+ },
+ {
+  "type": "function",
   "name": "setLimits",
   "inputs": [
    {
@@ -846,6 +943,19 @@ export const deskAbi = [
  },
  {
   "type": "function",
+  "name": "unassigned",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
   "name": "volumeByDay",
   "inputs": [
    {
@@ -885,6 +995,25 @@ export const deskAbi = [
     "type": "address",
     "indexed": false,
     "internalType": "address"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "BorrowFrontRun",
+  "inputs": [
+   {
+    "name": "id",
+    "type": "uint256",
+    "indexed": true,
+    "internalType": "uint256"
+   },
+   {
+    "name": "borrowDigest",
+    "type": "bytes32",
+    "indexed": false,
+    "internalType": "bytes32"
    }
   ],
   "anonymous": false
@@ -1060,6 +1189,25 @@ export const deskAbi = [
   "anonymous": false
  },
  {
+  "type": "event",
+  "name": "UnassignedReturned",
+  "inputs": [
+   {
+    "name": "to",
+    "type": "address",
+    "indexed": true,
+    "internalType": "address"
+   },
+   {
+    "name": "amount",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   }
+  ],
+  "anonymous": false
+ },
+ {
   "type": "error",
   "name": "BadAmount",
   "inputs": []
@@ -1082,6 +1230,11 @@ export const deskAbi = [
  {
   "type": "error",
   "name": "BadStatus",
+  "inputs": []
+ },
+ {
+  "type": "error",
+  "name": "BorrowAlreadyUsed",
   "inputs": []
  },
  {
