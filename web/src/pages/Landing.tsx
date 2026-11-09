@@ -260,7 +260,7 @@ export default function Landing() {
               {config?.net === "mainnet" ? (
                 <>
                   <a className="btn btn-ghost" href="https://mezo.org" target="_blank" rel="noreferrer">1. Open a trove on Mezo</a>
-                  <a className="btn btn-ghost" href="https://testnet.owo.nerom.site">Practise on testnet</a>
+                  <a className="btn btn-ghost" href="https://owo-testnet.nerom.site">Practise on testnet</a>
                   <Link className="btn btn-primary" to="/cash-out">2. Cash out</Link>
                 </>
               ) : (

@@ -40,7 +40,13 @@ export type OrderMeta = {
 type Db = { cursor: number; recipients: Record<string, RecipientRec>; orders: Record<string, OrderMeta> };
 
 mkdirSync(config.dataDir, { recursive: true });
-const file = join(config.dataDir, `owo-${config.net}.json`);
+// One file per desk contract: order ids restart at 1 on a new deployment.
+const legacy = join(config.dataDir, `owo-${config.net}.json`);
+const LEGACY_DESKS = ['0x62465d6c87fa5551a379ca12f135173ed8dad8cd'];
+const file =
+  !config.desk || LEGACY_DESKS.includes(config.desk.toLowerCase())
+    ? legacy
+    : join(config.dataDir, `owo-${config.net}-${config.desk.slice(2, 10).toLowerCase()}.json`);
 const db: Db = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : { cursor: 0, recipients: {}, orders: {} };
 
 let timer: NodeJS.Timeout | undefined;

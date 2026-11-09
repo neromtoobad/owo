@@ -112,7 +112,7 @@ export function Footer() {
           {config?.net === "testnet" ? (
             <a href="https://faucet.test.mezo.org" target="_blank" rel="noreferrer">Testnet faucet</a>
           ) : (
-            <a href="https://testnet.owo.nerom.site">Try on testnet</a>
+            <a href="https://owo-testnet.nerom.site">Try on testnet</a>
           )}
         </div>
       </div>
