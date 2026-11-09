@@ -8,3 +8,4 @@ dist/
 .DS_Store
 server/node_modules
 web/node_modules
+.claude/

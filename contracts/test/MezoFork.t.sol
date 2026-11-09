@@ -27,11 +27,16 @@ interface IForkVm {
 ///
 ///   forge test --match-contract MezoFork --fork-url https://rpc.test.mezo.org
 contract MezoForkTest is Base {
-    IERC20 constant MUSD = IERC20(0x118917a40FAF1CD7a13dB0Ef56C86De7973Ac503);
-    IBorrowerOperations constant BO = IBorrowerOperations(0xCdF7028ceAB81fA0C6971208e83fa7872994beE5);
-    address constant BOS = 0xD757e3646AF370b15f32EB557F0F8380Df7D639e;
-    ITroveManager constant TM = ITroveManager(0xE47c80e8c23f6B4A1aE41c34837a0599D5D16bb0);
+    // Mezo testnet (31611) by default; mainnet (31612) addresses are picked in setUp.
+    IERC20 MUSD = IERC20(0x118917a40FAF1CD7a13dB0Ef56C86De7973Ac503);
+    IBorrowerOperations BO = IBorrowerOperations(0xCdF7028ceAB81fA0C6971208e83fa7872994beE5);
+    address BOS = 0xD757e3646AF370b15f32EB557F0F8380Df7D639e;
+    ITroveManager TM = ITroveManager(0xE47c80e8c23f6B4A1aE41c34837a0599D5D16bb0);
     address constant ORACLE = 0x7b7c000000000000000000000000000000000015;
+
+    function _onMezo() internal view returns (bool) {
+        return block.chainid == 31611 || block.chainid == 31612;
+    }
 
     bytes32 constant WITHDRAW_MUSD_TYPEHASH =
         keccak256("WithdrawMUSD(uint256 amount,address borrower,address recipient,uint256 nonce,uint256 deadline)");
@@ -43,7 +48,13 @@ contract MezoForkTest is Base {
     address treasury = address(0x7EA5);
 
     function setUp() public {
-        if (block.chainid != 31611) return; // only meaningful on a Mezo testnet fork
+        if (!_onMezo()) return; // only meaningful on a Mezo fork
+        if (block.chainid == 31612) {
+            MUSD = IERC20(0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186);
+            BO = IBorrowerOperations(0x44b1bac67dDA612a41a58AAf779143B181dEe031);
+            BOS = 0xB57ab578BF20b3e318f3EFAA587C51DBccE5df7a;
+            TM = ITroveManager(0x94AfB503dBca74aC3E4929BACEeDfCe19B93c193);
+        }
         user = vm.addr(userKey);
         // The oracle precompile can't run on a fork: pin the live BTC price and a fresh timestamp.
         IForkVm(address(vm)).mockCall(ORACLE, abi.encodeWithSelector(IOracle.decimals.selector), abi.encode(uint8(18)));
@@ -78,7 +89,7 @@ contract MezoForkTest is Base {
     }
 
     function test_fork_borrowAndCashOut_realTrove() public {
-        if (block.chainid != 31611) return;
+        if (!_onMezo()) return;
         uint256 debtBefore = TM.getTroveDebt(user);
         uint256 walletBefore = MUSD.balanceOf(user);
         uint256 amount = 150e18;
@@ -112,7 +123,7 @@ contract MezoForkTest is Base {
     /// submits it to Mezo's real BorrowerOperationsSignatures first. The relay must still
     /// open the order against the MUSD that landed in the desk.
     function test_fork_borrowFrontRun_realMezo() public {
-        if (block.chainid != 31611) return;
+        if (!_onMezo()) return;
         uint256 amount = 120e18;
         uint256 dl = block.timestamp + 1 hours;
         bytes memory bsig = _borrowSig(amount, 0, dl);
@@ -142,7 +153,7 @@ contract MezoForkTest is Base {
     }
 
     function test_fork_borrowSigForOtherRecipientFails() public {
-        if (block.chainid != 31611) return;
+        if (!_onMezo()) return;
         uint256 dl = block.timestamp + 1 hours;
         OwoDesk.Intent memory it = OwoDesk.Intent({
             owner: user,
@@ -161,7 +172,7 @@ contract MezoForkTest is Base {
     }
 
     function test_fork_walletCashOut_realMUSD() public {
-        if (block.chainid != 31611) return;
+        if (!_onMezo()) return;
         vm.startPrank(user);
         (bool ok,) = address(MUSD).call(abi.encodeWithSignature("approve(address,uint256)", address(desk), 300e18));
         assertTrue(ok, "approve");

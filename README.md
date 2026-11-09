@@ -14,7 +14,9 @@ If the payout can't happen, the contract returns your MUSD:
 - **Reclaim** if the desk took it but didn't settle within the settle window.
 - **Rejected** orders are refunded automatically.
 
-Your MUSD is never released to Owo before your naira has been sent.
+Your MUSD is never released to Owo before the relayer reports the naira sent.
+
+**Trust model, plainly:** a contract can't see a bank. Settlement rests on the Owo relayer's report that the payout happened, and that report goes on-chain with the Paycrest order id so anyone can check it against Paycrest and Base. The contract enforces everything else: the relayer can only move an order's MUSD to the treasury (on settle) or back to its owner, and the owner can always cancel before pickup or reclaim after the settle window. Everything is public at [/status](https://owo.nerom.site/status).
 
 ## Why it matters for Mezo
 - **A real exit for MUSD.** The kickoff Q&A said a borrow-and-cash-out to a bank account ("one click sending USD to my bank account") counts. Owo turns "borrow against BTC" into "pay rent in Lagos" without selling the BTC.
@@ -46,12 +48,24 @@ Your MUSD is never released to Owo before your naira has been sent.
   - serves the API and the app.
 - **`web/`** is the app (Vite + React + viem).
 
+## Wave 2: what changed
+The Wave 1 review asked us to fix a High, verify the contract, be honest about trust, show trove risk, and make the full loop real on mainnet. Here's where each one stands:
+- **Front-running fixed (was a High).** Anyone could copy a user's `WithdrawMUSD` signature from a pending relay and submit it to Mezo first. That minted MUSD into the desk with no order and no way out. Now `borrowAndCashOut` recognises an already-used signature (it must recover to the owner at the nonce just consumed, with the desk as recipient, can be used only once, and needs that much unassigned MUSD) and opens the order anyway. The desk tracks `lockedMusd`, so the admin can return stray MUSD (`returnUnassigned`) but can never touch order funds. Tested in unit tests, on a fork of real Mezo (testnet **and** mainnet), and end to end through the relayer.
+- **Verified contract:** OwoDesk v2 is source-verified on the Mezo explorer.
+- **Honest copy:** the app now says settlement rests on the relayer's payout report.
+- **Trove risk in the flow:** liquidation price before and after, Mezo's fixed interest rate and what it costs on this borrow, the 0.1% borrowing fee, and a Recovery Mode warning.
+- **Redemption health checks:** the treasury reads `getTCR` and `checkRecoveryMode`. It refuses below 110% (where Mezo reverts) and holds redemptions in Recovery Mode.
+- **Mainnet safety:** mainnet never simulates payouts, and there's a per-wallet daily cap. A Paycrest rate guard refuses anomalous quotes; Paycrest briefly quoted ₦683/$ against ₦1,373 on Nov 9. The float is checked before an order is taken. See [MAINNET.md](MAINNET.md).
+- **Public status page:** reserves, payout float, Mezo TCR and every order, with links to the chain.
+- **Mainnet:** the code paths are built and fork-tested on Mezo mainnet. Live Paycrest payouts are switched on with the launch runbook in [MAINNET.md](MAINNET.md).
+
 ## Live
-- **App:** https://owo.nerom.site (also https://owo-production-f83c.up.railway.app)
+- **App:** https://owo.nerom.site · **Status:** https://owo.nerom.site/status
+- **OwoDesk v2 on Mezo testnet** (verified): [`0xC20D8c87c03d4a25f78c02db2c586e72e0b340EA`](https://explorer.test.mezo.org/address/0xC20D8c87c03d4a25f78c02db2c586e72e0b340EA?tab=contract)
 - **2-minute pitch:** https://youtu.be/76sDNTn-alk
 - **Deck:** https://owo.nerom.site/owo-deck.pdf
-- **OwoDesk on Mezo testnet** (chain 31611): [`0x62465d6c87fA5551a379Ca12F135173ed8dAd8CD`](https://explorer.test.mezo.org/address/0x62465d6c87fA5551a379Ca12F135173ed8dAd8CD)
-- **First real testnet cash-outs:**
+- **Wave 1 desk (v1)** on Mezo testnet: [`0x62465d6c87fA5551a379Ca12F135173ed8dAd8CD`](https://explorer.test.mezo.org/address/0x62465d6c87fA5551a379Ca12F135173ed8dAd8CD)
+- **Wave 1 testnet cash-outs (v1):**
   - [#1](https://owo.nerom.site/order/1): 50 MUSD borrowed from a trove by signature → ₦68,597.78
   - [#2](https://owo.nerom.site/order/2): 120 MUSD from the wallet by permit → ₦164,610.81
 - **Try it without real bank details:** pick "Owo Test Bank (testnet demo)" with any 10-digit number.
@@ -59,10 +73,11 @@ Your MUSD is never released to Owo before your naira has been sent.
 
 ## Tests
 ```bash
-cd contracts && forge test                                         # 25 unit + fuzz tests
+cd contracts && forge test --no-match-contract MezoFork               # 30 unit + fuzz tests (5 front-run cases)
 forge test --match-contract MezoFork --fork-url https://rpc.test.mezo.org   # real trove, real MUSD, real signatures
+forge test --match-contract MezoFork --fork-url https://mezo.drpc.org       # the same 4 tests on Mezo mainnet
 anvil --fork-url https://rpc.test.mezo.org --port 8646 --chain-id 31611 &
-cd ../server && node scripts/e2e-local.ts                          # contract + relayer + API, both routes, end to end
+cd ../server && node scripts/e2e-local.ts                          # both routes, a live front-run, status, treasury redemption
 ```
 Found while building: `withdrawMUSD` always makes a native call to the recipient for the collateral change, which is 0 BTC when only MUSD is drawn. A contract recipient therefore needs a `receive()`. OwoDesk accepts zero-value calls and refuses real BTC.
 
