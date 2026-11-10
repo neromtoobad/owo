@@ -1,6 +1,6 @@
 # AKINDO Wave 2: Owo (submit by Sat Nov 15, 16:00 Lagos / 15:00 UTC)
 
-Lines marked **[after mainnet]** go in only once the mainnet launch in MAINNET.md has happened. If it hasn't, delete them; everything else is true today.
+Final version: testnet v2. Mainnet payouts wait on Paycrest sender KYB, which can't clear before the deadline. Everything below is true today.
 
 ## Updates in this Wave (paste; under 3,000 characters)
 
@@ -22,7 +22,8 @@ Wave 2 works through every point in the Wave 1 review (Technical 4 → this wave
    - 4 fork tests that pass on both Mezo testnet and Mezo mainnet.
    - End to end, the relayer runs both routes, a live front-run, the status page and a treasury redemption.
 
-**[after mainnet]** Live on Mezo mainnet: OwoDesk <address> (verified). The first real cash-out, <N> MUSD → ₦<amount>, was paid to a Nigerian bank through Paycrest: Mezo tx <link>, Base tx <link>.
+9. Mainnet-ready: the same 4 fork tests pass on Mezo mainnet. Mainnet never simulates a payout, and a runbook covers the launch (MAINNET.md). Live naira payouts switch on once Paycrest sender KYB clears (1–3 business days).
+10. Live on testnet v2 now: two real cash-outs settled on the new contract, 50 MUSD borrowed by signature → ₦68,022.89 and 100 MUSD by permit → ₦136,045.79. They're listed on /status, and the bank step is simulated on testnet.
 
 Links:
 - Live: https://owo.nerom.site
@@ -33,12 +34,13 @@ Links:
 
 ## Milestone · 3rd Wave (paste)
 
-Scale the rail, Dec – Q1 2027:
+Real naira on mainnet, then scale, Dec – Q1 2027:
+- Paycrest sender KYB done → deploy OwoDesk v2 on Mezo mainnet (runbook ready) and pay the first real naira, with every payout on /status.
 - Open a new trove inside the same flow (openTroveWithSignature), so a first-time user goes from BTC to naira in one session. Mezo Passport, so Bitcoin wallets can sign.
 - Automated float: the treasury batches MUSD into protocol redemptions (with the TCR and Recovery Mode guards) and rebalances into Base USDC, with reserves on the status page.
 - New corridors on the same Paycrest rail: Ghana (GHS) and Kenya (KES). A WhatsApp/Telegram front end with loan-health alerts.
 
 ## Form fields to change from Wave 1
 - **Product type:** Functional
-- **About:** replace "What's next" with the Wave 2 list above. Under Submission details, set Readiness to "testnet deployment (v2, verified)", or "mainnet deployment" **[after mainnet]**, and give the v2 address.
-- **Chain deployed on:** Mezo (testnet; mainnet **[after mainnet]**).
+- **About:** replace "What's next" with the Wave 2 list above. Under Submission details, set Readiness to "testnet deployment (v2, verified; mainnet-ready, payouts pending Paycrest KYB)" and give the v2 address 0xC20D8c87c03d4a25f78c02db2c586e72e0b340EA.
+- **Chain deployed on:** Mezo testnet (chain 31611).
